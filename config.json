@@ -1,0 +1,19 @@
+{
+    "app" : {
+        "name": "slido-clone-backend"
+    },
+    "web": {
+        "prefork": false,
+        "port": 3000
+    },
+    "log": {
+        "level": 4
+    },
+    "database": {
+        "pool": {
+            "idle": 10,
+            "max": 100,
+            "lifetime": 300
+        }
+    }
+}
