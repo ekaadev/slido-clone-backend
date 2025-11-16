@@ -30,3 +30,14 @@ func (r *UserRepository) FindByEmailOrUsername(db *gorm.DB, email string, userna
 
 	return &user, err
 }
+
+// FindByUsername find user by username
+func (r *UserRepository) FindByUsername(db *gorm.DB, username string) (*entity.User, error) {
+	var user entity.User
+	err := db.Where("username = ?", username).First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	return &user, err
+}

@@ -44,3 +44,28 @@ func (c *UserController) Register(ctx *fiber.Ctx) error {
 		Data: response,
 	})
 }
+
+// Login handler yang digunakan untuk login user (call usecase login user)
+func (c *UserController) Login(ctx *fiber.Ctx) error {
+	// create model login user request
+	request := new(model.LoginUserRequest)
+
+	// parsing body payload
+	err := ctx.BodyParser(request)
+	if err != nil {
+		c.Log.Warnf("Body parse failed: %s", err)
+		return fiber.ErrBadRequest
+	}
+
+	// call usecase to login user
+	response, err := c.UserUseCase.Login(ctx.UserContext(), request)
+	if err != nil {
+		c.Log.Warnf("Login failed: %s", err)
+		return err
+	}
+
+	// return response
+	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
+		Data: response,
+	})
+}

@@ -105,3 +105,48 @@ func (c *UserUseCase) Create(ctx context.Context, request *model.RegisterUserReq
 	// return and convert to user response
 	return converter.UserToAuthResponse(user, token), nil
 }
+
+// Login usecase untuk melakukan login user
+func (c *UserUseCase) Login(ctx context.Context, request *model.LoginUserRequest) (*model.AuthResponse, error) {
+	// begin db transaction
+	tx := c.DB.WithContext(ctx).Begin()
+	defer tx.Rollback()
+
+	// validate request
+	err := c.Validate.Struct(request)
+	if err != nil {
+		c.Log.Warnf("Invalid request body: %+v", err)
+		return nil, fiber.ErrBadRequest
+	}
+
+	// logic to find user by username
+	existingUser, err := c.UserRepository.FindByUsername(tx, request.Username)
+	if err != nil {
+		c.Log.Errorf("Failed to find user by username: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	if existingUser == nil {
+		c.Log.Warnf("User not found: %s", request.Username)
+		return nil, fiber.ErrUnauthorized
+	}
+
+	// compare password hash
+	err = bcrypt.CompareHashAndPassword([]byte(existingUser.PasswordHash), []byte(request.Password))
+	if err != nil {
+		c.Log.Warnf("Invalid password for user: %s", request.Username)
+		return nil, fiber.ErrUnauthorized
+	}
+
+	// create a token jwt
+	token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
+		ID: existingUser.Username,
+	})
+	if err != nil {
+		c.Log.Warnf("Failed to create token: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// return and convert to user response
+	return converter.UserToAuthResponse(existingUser, token), nil
+}
