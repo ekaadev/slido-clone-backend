@@ -84,8 +84,7 @@ Request Body:
 
 ```json
 {
-  "username": "string",
-  "password": "string"
+  "room_code": "ABC123"
 }
 ```
 
@@ -107,7 +106,6 @@ Response 200:
 ## Room
 
 ### Create a Room
-
 
 ```http
 POST /rooms
@@ -176,7 +174,6 @@ Response: 200
 
 ### Close Room
 
-
 ```http
 PATCH /rooms/:room_id/close
 Authorization: Bearer {token}
@@ -186,7 +183,7 @@ Request Body
 
 ```json
 {
-  "status": "closed",
+  "status": "closed"
 }
 ```
 
@@ -246,13 +243,16 @@ Authorization: Bearer {token}
 ```
 
 Request Body:
+
 ```json
 {
-  "display_name": "string" // Optional
+  "display_name": "string"
+  // Optional
 }
 ```
 
 Response: 200
+
 ```json
 {
   "data": {
@@ -281,6 +281,7 @@ Query Parameters:
 - `offset` (default: 0)
 
 Response: 200
+
 ```json
 {
   "data": {
@@ -309,7 +310,7 @@ Response: 200
 
 ## Question (Q&A)
 
-### Submit Question / Create 
+### Submit Question / Create
 
 ```http
 POST /rooms/:room_id/questions
@@ -317,6 +318,7 @@ Authorization: Bearer {token}
 ```
 
 Request Body:
+
 ```json
 {
   "content": "string"
@@ -324,6 +326,7 @@ Request Body:
 ```
 
 Response: 201
+
 ```json
 {
   "data": {
@@ -339,8 +342,10 @@ Response: 201
       "created_at": "2024-11-11T10:15:00Z"
     },
     "xp_earned": {
-      "points": 10, // points yang didapat
-      "new_total": 10 // hasil kalkulasi (0 + 10)
+      "points": 10,
+      // points yang didapat
+      "new_total": 10
+      // hasil kalkulasi (0 + 10)
     }
   }
 }
@@ -359,8 +364,8 @@ Query Parameters:
 - `limit` (default: 20)
 - `offset` (default: 0)
 
-
 Response: 200
+
 ```json
 {
   "data": {
@@ -396,6 +401,7 @@ Authorization: Bearer {token}
 ```
 
 Response: 200
+
 ```json
 {
   "data": {
@@ -410,12 +416,14 @@ Response: 200
       "upvote_count": 16
     },
     "xp_earned": {
-      "recipient_participant_id": 42, // id penerima
-      "points": 3, // poin yang didapat
-      "source": "upvote_received" // source xp (asal xp)
+      "recipient_participant_id": 42,
+      // id penerima
+      "points": 3,
+      // poin yang didapat
+      "source": "upvote_received"
+      // source xp (asal xp)
     }
   }
-
 }
 ```
 
@@ -427,6 +435,7 @@ Authorization: Bearer {token}
 ```
 
 Response: 200
+
 ```json
 {
   "data": {
@@ -446,13 +455,16 @@ Authorization: Bearer {token}
 ```
 
 Request Body:
+
 ```json
 {
-  "status": "highlighted" // atau "answered", default "pending"
+  "status": "highlighted"
+  // atau "answered", default "pending"
 }
 ```
 
 Response: 200
+
 ```json
 {
   "data": {
@@ -462,9 +474,12 @@ Response: 200
       "is_validated_by_presenter": true
     },
     "xp_awarded": {
-      "participant_id": 42, // user/participant yang mendapatkan xp
-      "points": 25, // point yang didapat
-      "new_total": 48 // total kalkulasi baru
+      "participant_id": 42,
+      // user/participant yang mendapatkan xp
+      "points": 25,
+      // point yang didapat
+      "new_total": 48
+      // total kalkulasi baru
     }
   }
 }
@@ -480,6 +495,7 @@ Authorization: Bearer {token}
 ```
 
 Request Body:
+
 ```json
 {
   "question": "string",
@@ -493,6 +509,7 @@ Request Body:
 ```
 
 Response: 201
+
 ```json
 {
   "data": {
@@ -545,6 +562,7 @@ Authorization: Bearer {token}
 ```
 
 Response: 200
+
 ```json
 {
   "data": {
@@ -580,7 +598,7 @@ Response: 200
             "vote_count": 3,
             "order": 4
           }
-        ],
+        ]
       }
     ]
   }
@@ -595,6 +613,7 @@ Authorization: Bearer {token}
 ```
 
 Request Body:
+
 ```json
 {
   "option_id": 2
@@ -602,6 +621,7 @@ Request Body:
 ```
 
 Response: 200
+
 ```json
 {
   "data": {
@@ -654,8 +674,9 @@ Authorization: Bearer {token}
 ```
 
 Response: 200
+
 ```json
-{  
+{
   "data": {
     "poll": {
       "id": 5,
@@ -696,6 +717,7 @@ Query Parameters:
 - `limit` (default: 10)
 
 Response: 200
+
 ```json
 {
   "data": {
@@ -732,6 +754,7 @@ Authorization: Bearer {token}
 ```
 
 Request Body:
+
 ```json
 {
   "content": "string"
@@ -739,6 +762,7 @@ Request Body:
 ```
 
 Response: 201
+
 ```json
 {
   "data": {
@@ -764,6 +788,7 @@ Authorization: Bearer {token}
 ```
 
 Response: 200
+
 ```json
 {
   "data": {
@@ -786,7 +811,7 @@ Response: 200
         "content": "string",
         "created_at": "2024-11-11T10:49:30Z"
       }
-    ],
+    ]
   }
 }
 ```
@@ -794,6 +819,7 @@ Response: 200
 ## XP
 
 ### Get Leaderboard
+
 ```http
 GET /rooms/:room_id/leaderboard
 Authorization: Bearer {token}
@@ -814,7 +840,7 @@ Query Parameters:
           "display_name": "string",
           "is_anonymous": false
         },
-        "xp_score": 95,
+        "xp_score": 95
       },
       {
         "rank": 2,
@@ -823,7 +849,7 @@ Query Parameters:
           "display_name": "string",
           "is_anonymous": true
         },
-        "xp_score": 78,
+        "xp_score": 78
       },
       {
         "rank": 3,
@@ -832,7 +858,7 @@ Query Parameters:
           "display_name": "string",
           "is_anonymous": false
         },
-        "xp_score": 65,
+        "xp_score": 65
       }
     ],
     "my_rank": {
@@ -852,6 +878,7 @@ Authorization: Bearer {token}
 ```
 
 Response: 200
+
 ```json
 {
   "data": {
