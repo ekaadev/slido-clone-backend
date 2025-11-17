@@ -28,15 +28,18 @@ type BootstrapConfig struct {
 func Bootstrap(config *BootstrapConfig) {
 	// setup repositories
 	userRepository := repository.NewUserRepository(config.Log)
+	roomRepository := repository.NewRoomRepository(config.Log)
 
 	// setup utils
 	tokenUtil := util.NewTokenUtil(config.Config.GetString("JWT_SECRET"), config.Redis)
 
 	// setup use cases
 	userUseCase := usecase.NewUserUseCase(config.DB, config.Log, config.Validator, userRepository, tokenUtil)
+	roomUseCase := usecase.NewRoomUseCase(config.DB, config.Log, config.Validator, roomRepository)
 
 	// setup controller
 	userController := http.NewUserController(config.Log, userUseCase)
+	roomController := http.NewRoomController(config.Log, roomUseCase)
 
 	// setup middleware
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
@@ -45,6 +48,7 @@ func Bootstrap(config *BootstrapConfig) {
 	routeConfig := route.RouteConfig{
 		App:            config.App,
 		UserController: userController,
+		RoomController: roomController,
 		AuthMiddleware: authMiddleware,
 	}
 
