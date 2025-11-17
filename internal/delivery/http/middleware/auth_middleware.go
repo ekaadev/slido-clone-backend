@@ -4,6 +4,7 @@ import (
 	"slido-clone-backend/internal/model"
 	"slido-clone-backend/internal/usecase"
 	"slido-clone-backend/internal/util"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -17,8 +18,15 @@ func NewAuth(userUseCase *usecase.UserUseCase, tokenUtil *util.TokenUtil) fiber.
 
 		userUseCase.Log.Debugf("Authorization : %s", request.Token)
 
+		// split "Bearer <token>"
+		parts := strings.Split(request.Token, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			userUseCase.Log.Warnf("Invalid token format")
+			return fiber.ErrUnauthorized
+		}
+
 		// parse token
-		auth, err := tokenUtil.ParseToken(ctx.UserContext(), request.Token)
+		auth, err := tokenUtil.ParseToken(ctx.UserContext(), parts[1])
 		if err != nil {
 			userUseCase.Log.Warnf("Failed to parse token: %v", err)
 			return fiber.ErrUnauthorized
