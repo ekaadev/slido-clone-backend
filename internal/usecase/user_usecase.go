@@ -95,7 +95,11 @@ func (c *UserUseCase) Create(ctx context.Context, request *model.RegisterUserReq
 
 	// create a token jwt
 	token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
-		ID: user.Username,
+		UserID:      &user.ID,
+		Username:    user.Username,
+		Email:       user.Email,
+		Role:        user.Role,
+		IsAnonymous: false,
 	})
 	if err != nil {
 		c.Log.Warnf("Failed to create token: %+v", err)
@@ -140,7 +144,11 @@ func (c *UserUseCase) Login(ctx context.Context, request *model.LoginUserRequest
 
 	// create a token jwt
 	token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
-		ID: existingUser.Username,
+		UserID:      &existingUser.ID,
+		Email:       existingUser.Email,
+		Role:        existingUser.Role,
+		Username:    existingUser.Username,
+		IsAnonymous: false,
 	})
 	if err != nil {
 		c.Log.Warnf("Failed to create token: %+v", err)
@@ -149,4 +157,8 @@ func (c *UserUseCase) Login(ctx context.Context, request *model.LoginUserRequest
 
 	// return and convert to user response
 	return converter.UserToAuthResponse(existingUser, token), nil
+}
+
+func (c *UserUseCase) Anon(ctx context.Context, request model.AnonymousUserRequest) (*model.AnonymousAuthResponse, error) {
+	panic("implement me")
 }

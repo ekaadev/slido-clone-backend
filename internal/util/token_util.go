@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"slido-clone-backend/internal/model"
 	"time"
 
@@ -26,11 +27,14 @@ func NewTokenUtil(secretKey string, redisClient *redis.Client) *TokenUtil {
 
 // CreateToken generates a JWT token for the given Auth model.
 func (t *TokenUtil) CreateToken(ctx context.Context, auth *model.Auth) (string, error) {
+	now := time.Now()
+	expiryDuration := time.Hour * 24 * 30 // 30 days
+	// set expiration time for the token
+	auth.ExpiresAt = jwt.NewNumericDate(now.Add(expiryDuration))
+	auth.IssuedAt = jwt.NewNumericDate(now)
+
 	// create structure of the token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":  auth.ID,
-		"exp": time.Now().Add(time.Hour * 24 * 30).UnixMilli(),
-	})
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, auth)
 
 	// sign the token with the secret key
 	jwtToken, err := token.SignedString([]byte(t.SecretKey))
@@ -39,7 +43,7 @@ func (t *TokenUtil) CreateToken(ctx context.Context, auth *model.Auth) (string, 
 	}
 
 	// store token in redis with expiration same as token expiration
-	_, err = t.Redis.Set(ctx, jwtToken, auth.ID, time.Hour*24*30).Result()
+	_, err = t.Redis.Set(ctx, jwtToken, "valid", expiryDuration).Result()
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +54,11 @@ func (t *TokenUtil) CreateToken(ctx context.Context, auth *model.Auth) (string, 
 // ParseToken validates and parses the JWT token string and returns the Auth model.
 func (t *TokenUtil) ParseToken(ctx context.Context, tokenString string) (*model.Auth, error) {
 	// parse the token to normal structure of jwt
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &model.Auth{}, func(token *jwt.Token) (interface{}, error) {
+		// Validate signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
 		return []byte(t.SecretKey), nil
 	})
 	if err != nil {
@@ -58,12 +66,13 @@ func (t *TokenUtil) ParseToken(ctx context.Context, tokenString string) (*model.
 	}
 
 	// extract claims from the token
-	claims := token.Claims.(jwt.MapClaims)
-	id := claims["id"].(string)
-	exp := claims["exp"].(float64)
+	claims, ok := token.Claims.(*model.Auth)
+	if !ok || !token.Valid {
+		return nil, fiber.ErrUnauthorized
+	}
 
 	// check if token is expired
-	if int64(exp) < time.Now().UnixMilli() {
+	if claims.ExpiresAt != nil && claims.ExpiresAt.Before(time.Now()) {
 		return nil, fiber.ErrUnauthorized
 	}
 
@@ -78,9 +87,5 @@ func (t *TokenUtil) ParseToken(ctx context.Context, tokenString string) (*model.
 		return nil, fiber.ErrUnauthorized
 	}
 
-	auth := &model.Auth{
-		ID: id,
-	}
-
-	return auth, nil
+	return claims, nil
 }
