@@ -28,4 +28,5 @@ func (c *RouteConfig) SetupGuestRoute() {
 func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Use(c.AuthMiddleware)
 	c.App.Post("/api/v1/rooms", c.RoomController.Create)
+	c.App.Get("/api/v1/rooms/:room_code", c.RoomController.Get)
 }

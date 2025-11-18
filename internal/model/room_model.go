@@ -35,6 +35,10 @@ type RoomDetailResponse struct {
 	CreatedAt time.Time     `json:"created_at"`
 }
 
+type GetRoomDetailResponse struct {
+	Room RoomDetailResponse `json:"room"`
+}
+
 type PresenterInfo struct {
 	ID       uint   `json:"id"`
 	Username string `json:"username"`
@@ -54,4 +58,9 @@ type RoomListItem struct {
 	Status            string    `json:"status"`
 	ParticipantsCount int       `json:"participants_count"`
 	CreatedAt         time.Time `json:"created_at"`
+}
+
+type GetRoomRequest struct {
+	PresenterID uint   `json:"-" validate:"required,min=1"`
+	RoomCode    string `json:"-" validate:"required,len=6,alphanum"`
 }

@@ -49,3 +49,29 @@ func (c *RoomController) Create(ctx *fiber.Ctx) error {
 		Data: response,
 	})
 }
+
+// Get handler yang digunakan untuk mencari room berdasarkan room code
+func (c *RoomController) Get(ctx *fiber.Ctx) error {
+	// get user from locals
+	auth := middleware.GetUser(ctx)
+
+	// create model get room request
+	// get room code from params
+	// assign value to model request
+	request := &model.GetRoomRequest{
+		RoomCode:    ctx.Params("room_code"),
+		PresenterID: *auth.UserID,
+	}
+
+	// call usecase to get room
+	response, err := c.RoomUseCase.Get(ctx.UserContext(), request)
+	if err != nil {
+		c.Log.Warnf("Failed to get room: %s", err)
+		return err
+	}
+
+	// return response
+	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
+		Data: response,
+	})
+}

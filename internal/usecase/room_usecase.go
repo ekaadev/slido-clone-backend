@@ -78,6 +78,40 @@ func (c *RoomUseCase) Create(ctx context.Context, request *model.CreateRoomReque
 	return converter.RoomToCreateRoomResponse(room), nil
 }
 
+func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequest) (*model.GetRoomDetailResponse, error) {
+	// begin transaction
+	tx := c.DB.WithContext(ctx).Begin()
+	defer tx.Rollback()
+
+	// validate get room request
+	err := c.Validate.Struct(request)
+	if err != nil {
+		c.Log.Warnf("Invalid request body: %+v", err)
+		return nil, fiber.ErrBadRequest
+	}
+
+	// logic to get room by room code
+	// call repository to find room by room code
+	existingRoom, err := c.RoomRepository.FindByRoomCode(tx, request.RoomCode, request.PresenterID)
+	if err != nil {
+		c.Log.Warnf("Failed to find room by room code: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	if existingRoom == nil {
+		return nil, fiber.ErrNotFound
+	}
+
+	// commit transaction
+	if err = tx.Commit().Error; err != nil {
+		c.Log.Warnf("Failed to commit transaction: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// return room detail response
+	return converter.RoomToGetRoomDetailResponse(existingRoom), nil
+}
+
 // GenerateRoomCode generate with crypto/rand
 func GenerateRoomCode(n int) (string, error) {
 	result := make([]byte, n)
