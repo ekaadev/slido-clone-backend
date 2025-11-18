@@ -24,6 +24,7 @@ func NewRoomRepository(log *logrus.Logger) *RoomRepository {
 // FindByRoomCode find room by room code
 func (r *RoomRepository) FindByRoomCode(db *gorm.DB, code string, presenterId uint) (*entity.Room, error) {
 	var room entity.Room
+	// with preload associations, karena butuh data yang terkait
 	err := db.Preload(clause.Associations).Where("room_code = ? AND presenter_id = ?", code, presenterId).First(&room).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
