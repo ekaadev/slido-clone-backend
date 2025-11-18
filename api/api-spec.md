@@ -204,7 +204,7 @@ Response: 200
 ### Get Room Presenter / List Room Presenter
 
 ```http
-GET /rooms/:room_code
+GET /rooms/my-rooms
 Authorization: Bearer {token}
 ```
 
