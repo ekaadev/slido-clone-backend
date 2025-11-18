@@ -48,3 +48,17 @@ func RoomToGetRoomDetailResponse(room *entity.Room) *model.GetRoomDetailResponse
 		Room: *RoomToDetailResponse(room),
 	}
 }
+
+func RoomToUpdateToCloseResponse(room *entity.Room) *model.UpdateToCloseRoom {
+	return &model.UpdateToCloseRoom{
+		ID:       room.ID,
+		Status:   room.Status,
+		ClosedAt: room.ClosedAt,
+	}
+}
+
+func UpdateToCloseRoomToResponse(update *entity.Room) *model.UpdateToCloseRoomResponse {
+	return &model.UpdateToCloseRoomResponse{
+		Room: *RoomToUpdateToCloseResponse(update),
+	}
+}

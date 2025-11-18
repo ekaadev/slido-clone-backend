@@ -60,12 +60,27 @@ type RoomListItem struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
+type RoomListResponse struct {
+	RoomListItem []RoomListItem `json:"rooms"`
+}
+
 type GetRoomRequestByRoomCode struct {
 	PresenterID uint   `json:"-" validate:"required,min=1"`
 	RoomCode    string `json:"-" validate:"required,len=6,alphanum"`
 }
 
-type GetRoomRequestByID struct {
-	PresenterID uint `json:"-" validate:"required,min=1"`
-	RoomID      uint `json:"-" validate:"required,min=1"`
+type UpdateToCloseRoomRequestByID struct {
+	PresenterID uint   `json:"-" validate:"required,min=1"`
+	RoomID      uint   `json:"-" validate:"required,min=1"`
+	Status      string `json:"status" validate:"required,oneof=closed"`
+}
+
+type UpdateToCloseRoom struct {
+	ID       uint       `json:"id"`
+	Status   string     `json:"status"`
+	ClosedAt *time.Time `json:"closed_at,omitempty"`
+}
+
+type UpdateToCloseRoomResponse struct {
+	Room UpdateToCloseRoom `json:"room"`
 }

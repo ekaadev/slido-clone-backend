@@ -4,6 +4,7 @@ import (
 	"slido-clone-backend/internal/delivery/http/middleware"
 	"slido-clone-backend/internal/model"
 	"slido-clone-backend/internal/usecase"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -67,6 +68,42 @@ func (c *RoomController) Get(ctx *fiber.Ctx) error {
 	response, err := c.RoomUseCase.Get(ctx.UserContext(), request)
 	if err != nil {
 		c.Log.Warnf("Failed to get room: %s", err)
+		return err
+	}
+
+	// return response
+	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
+		Data: response,
+	})
+}
+
+// UpdateToClosed handler yang digunakan untuk mengupdate status room menjadi closed
+func (c *RoomController) UpdateToClosed(ctx *fiber.Ctx) error {
+	// get user from locals
+	auth := middleware.GetUser(ctx)
+
+	request := new(model.UpdateToCloseRoomRequestByID)
+
+	// parsing body payload
+	if err := ctx.BodyParser(request); err != nil {
+		c.Log.Warnf("Failed to parse body: %s", err)
+		return fiber.ErrBadRequest
+	}
+
+	roomId := ctx.Params("room_id")
+	idUint64, err := strconv.ParseUint(roomId, 10, 64)
+	if err != nil {
+		c.Log.Warnf("Invalid room id: %s", err)
+		return fiber.ErrBadRequest
+	}
+
+	request.PresenterID = *auth.UserID
+	request.RoomID = uint(idUint64)
+
+	// call usecase to update room status
+	response, err := c.RoomUseCase.UpdateToClosed(ctx.UserContext(), request)
+	if err != nil {
+		c.Log.Warnf("Failed to update room to closed: %s", err)
 		return err
 	}
 

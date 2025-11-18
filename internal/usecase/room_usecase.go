@@ -8,6 +8,7 @@ import (
 	"slido-clone-backend/internal/model"
 	"slido-clone-backend/internal/model/converter"
 	"slido-clone-backend/internal/repository"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -110,6 +111,53 @@ func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequestByRo
 
 	// return room detail response
 	return converter.RoomToGetRoomDetailResponse(existingRoom), nil
+}
+
+// UpdateToClosed usecase untuk mengupdate room berdasarkan id
+// hanya bisa diubah statusnya menjadi closed
+// TODO: berpotensi untuk digunakan dalam websocket "on close room"
+func (c *RoomUseCase) UpdateToClosed(ctx context.Context, request *model.UpdateToCloseRoomRequestByID) (*model.UpdateToCloseRoomResponse, error) {
+	// begin transaction
+	tx := c.DB.WithContext(ctx).Begin()
+	defer tx.Rollback()
+
+	// validate update room request
+	err := c.Validate.Struct(request)
+	if err != nil {
+		c.Log.Warnf("Invalid request body: %+v", err)
+		return nil, fiber.ErrBadRequest
+	}
+
+	// logic to update room by id
+	room, err := c.RoomRepository.FindById(tx, request.RoomID, request.PresenterID)
+	if err != nil {
+		c.Log.Warnf("Failed to find room by id: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	if room == nil {
+		return nil, fiber.ErrNotFound
+	}
+
+	// update room status to closed
+	room.Status = request.Status
+	now := time.Now()
+	room.ClosedAt = &now
+
+	// update room in repository
+	err = c.RoomRepository.Update(tx, room)
+	if err != nil {
+		c.Log.Warnf("Failed to update room: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// commit transaction
+	if err = tx.Commit().Error; err != nil {
+		c.Log.Warnf("Failed to commit transaction: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	return converter.UpdateToCloseRoomToResponse(room), nil
 }
 
 // GenerateRoomCode generate with crypto/rand
