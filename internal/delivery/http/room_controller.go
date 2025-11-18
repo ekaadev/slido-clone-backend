@@ -58,7 +58,7 @@ func (c *RoomController) Get(ctx *fiber.Ctx) error {
 	// create model get room request
 	// get room code from params
 	// assign value to model request
-	request := &model.GetRoomRequest{
+	request := &model.GetRoomRequestByRoomCode{
 		RoomCode:    ctx.Params("room_code"),
 		PresenterID: *auth.UserID,
 	}

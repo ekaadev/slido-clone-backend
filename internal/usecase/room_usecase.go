@@ -78,7 +78,7 @@ func (c *RoomUseCase) Create(ctx context.Context, request *model.CreateRoomReque
 	return converter.RoomToCreateRoomResponse(room), nil
 }
 
-func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequest) (*model.GetRoomDetailResponse, error) {
+func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequestByRoomCode) (*model.GetRoomDetailResponse, error) {
 	// begin transaction
 	tx := c.DB.WithContext(ctx).Begin()
 	defer tx.Rollback()

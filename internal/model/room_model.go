@@ -60,7 +60,12 @@ type RoomListItem struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
-type GetRoomRequest struct {
+type GetRoomRequestByRoomCode struct {
 	PresenterID uint   `json:"-" validate:"required,min=1"`
 	RoomCode    string `json:"-" validate:"required,len=6,alphanum"`
+}
+
+type GetRoomRequestByID struct {
+	PresenterID uint `json:"-" validate:"required,min=1"`
+	RoomID      uint `json:"-" validate:"required,min=1"`
 }
