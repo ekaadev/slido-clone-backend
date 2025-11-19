@@ -29,12 +29,13 @@ func Bootstrap(config *BootstrapConfig) {
 	// setup repositories
 	userRepository := repository.NewUserRepository(config.Log)
 	roomRepository := repository.NewRoomRepository(config.Log)
+	participantRepository := repository.NewParticipantRepository(config.Log)
 
 	// setup utils
 	tokenUtil := util.NewTokenUtil(config.Config.GetString("JWT_SECRET"), config.Redis)
 
 	// setup use cases
-	userUseCase := usecase.NewUserUseCase(config.DB, config.Log, config.Validator, userRepository, tokenUtil)
+	userUseCase := usecase.NewUserUseCase(config.DB, config.Log, config.Validator, userRepository, participantRepository, roomRepository, tokenUtil)
 	roomUseCase := usecase.NewRoomUseCase(config.DB, config.Log, config.Validator, roomRepository)
 
 	// setup controller

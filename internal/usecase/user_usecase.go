@@ -16,21 +16,25 @@ import (
 )
 
 type UserUseCase struct {
-	DB             *gorm.DB
-	Log            *logrus.Logger
-	Validate       *validator.Validate
-	UserRepository *repository.UserRepository
-	TokenUtil      *util.TokenUtil
+	DB                    *gorm.DB
+	Log                   *logrus.Logger
+	Validate              *validator.Validate
+	UserRepository        *repository.UserRepository
+	ParticipantRepository *repository.ParticipantRepository
+	RoomRepository        *repository.RoomRepository
+	TokenUtil             *util.TokenUtil
 }
 
 // NewUserUseCase create new instance of UserUseCase
-func NewUserUseCase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate, userRepository *repository.UserRepository, tokenUtil *util.TokenUtil) *UserUseCase {
+func NewUserUseCase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate, userRepository *repository.UserRepository, participantRepository *repository.ParticipantRepository, roomRepository *repository.RoomRepository, tokenUtil *util.TokenUtil) *UserUseCase {
 	return &UserUseCase{
-		DB:             db,
-		Log:            log,
-		Validate:       validate,
-		UserRepository: userRepository,
-		TokenUtil:      tokenUtil,
+		DB:                    db,
+		Log:                   log,
+		Validate:              validate,
+		UserRepository:        userRepository,
+		ParticipantRepository: participantRepository,
+		RoomRepository:        roomRepository,
+		TokenUtil:             tokenUtil,
 	}
 }
 
@@ -142,6 +146,12 @@ func (c *UserUseCase) Login(ctx context.Context, request *model.LoginUserRequest
 		return nil, fiber.ErrUnauthorized
 	}
 
+	// commit transaction
+	if err = tx.Commit().Error; err != nil {
+		c.Log.Errorf("Failed to commit transaction: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
 	// create a token jwt
 	token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
 		UserID:      &existingUser.ID,
@@ -159,6 +169,59 @@ func (c *UserUseCase) Login(ctx context.Context, request *model.LoginUserRequest
 	return converter.UserToAuthResponse(existingUser, token), nil
 }
 
-func (c *UserUseCase) Anon(ctx context.Context, request model.AnonymousUserRequest) (*model.AnonymousAuthResponse, error) {
-	panic("implement me")
+// Anon usecase untuk membuat user anonymous
+// dapat membuat user anonymous ketika room code valid
+func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequest) (*model.AnonymousAuthResponse, error) {
+	// begin transaction
+	tx := c.DB.WithContext(ctx).Begin()
+	defer tx.Rollback()
+
+	// validate request
+	if err := c.Validate.Struct(request); err != nil {
+		c.Log.Warnf("Invalid request body: %+v", err)
+		return nil, fiber.ErrBadRequest
+	}
+
+	// logic to create anonymous user
+	// check if room code exists
+	roomExisting, err := c.RoomRepository.FindByRoomCode(tx, request.RoomCode)
+	if err != nil {
+		c.Log.Errorf("Failed to find room by room code: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	if roomExisting == nil {
+		c.Log.Warnf("Room not found with code: %s", request.RoomCode)
+		return nil, fiber.ErrNotFound
+	}
+
+	// create participant entity
+	participant := &entity.Participant{
+		RoomID:      roomExisting.ID,
+		DisplayName: "Anonymous",
+		IsAnonymous: true,
+	}
+
+	// create participant in repository
+	if err = c.ParticipantRepository.Create(tx, participant); err != nil {
+		c.Log.Errorf("Failed to create participant: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// commit transaction
+	if err = tx.Commit().Error; err != nil {
+		c.Log.Errorf("Failed to commit transaction: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// create a token jwt for anonymous user
+	token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
+		ParticipantID: &participant.ID,
+		RoomID:        &roomExisting.ID,
+		DisplayName:   participant.DisplayName,
+		IsAnonymous:   participant.IsAnonymous,
+	})
+
+	// return and convert to anonymous user response
+	return converter.ParticipantAnonymousAuthResponse(participant, token), nil
 }

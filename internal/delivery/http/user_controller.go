@@ -69,3 +69,27 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		Data: response,
 	})
 }
+
+// Anon handler digunakan untuk anonymous user (call usecase anon user)
+func (c *UserController) Anon(ctx *fiber.Ctx) error {
+	// create model anon user request
+	request := new(model.AnonymousUserRequest)
+
+	// parsing body payload
+	if err := ctx.BodyParser(request); err != nil {
+		c.Log.Warnf("Body parse failed: %s", err)
+		return fiber.ErrBadRequest
+	}
+
+	// call usecase to anon user
+	response, err := c.UserUseCase.Anon(ctx.UserContext(), request)
+	if err != nil {
+		c.Log.Warnf("Anon failed: %s", err)
+		return err
+	}
+
+	// return response
+	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
+		Data: response,
+	})
+}

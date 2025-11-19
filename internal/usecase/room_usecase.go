@@ -93,7 +93,7 @@ func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequestByRo
 
 	// logic to get room by room code
 	// call repository to find room by room code
-	existingRoom, err := c.RoomRepository.FindByRoomCode(tx, request.RoomCode, request.PresenterID)
+	existingRoom, err := c.RoomRepository.FindByRoomCodeAndPresenterId(tx, request.RoomCode, request.PresenterID)
 	if err != nil {
 		c.Log.Warnf("Failed to find room by room code: %+v", err)
 		return nil, fiber.ErrInternalServerError

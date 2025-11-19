@@ -23,6 +23,7 @@ func (c *RouteConfig) Setup() {
 func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Post("/api/v1/users/register", c.UserController.Register)
 	c.App.Post("/api/v1/users/login", c.UserController.Login)
+	c.App.Post("/api/v1/users/anonymous", c.UserController.Anon)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {

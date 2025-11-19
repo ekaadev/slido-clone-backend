@@ -21,3 +21,10 @@ func UserToAuthResponse(user *entity.User, token string) *model.AuthResponse {
 		Token: token,
 	}
 }
+
+func ParticipantAnonymousAuthResponse(participant *entity.Participant, token string) *model.AnonymousAuthResponse {
+	return &model.AnonymousAuthResponse{
+		Participant: *ParticipantToResponse(participant),
+		Token:       token,
+	}
+}

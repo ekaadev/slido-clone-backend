@@ -21,8 +21,8 @@ func NewRoomRepository(log *logrus.Logger) *RoomRepository {
 	}
 }
 
-// FindByRoomCode find room by room code
-func (r *RoomRepository) FindByRoomCode(db *gorm.DB, code string, presenterId uint) (*entity.Room, error) {
+// FindByRoomCodeAndPresenterId find room by room code
+func (r *RoomRepository) FindByRoomCodeAndPresenterId(db *gorm.DB, code string, presenterId uint) (*entity.Room, error) {
 	var room entity.Room
 	// with preload associations, karena butuh data yang terkait
 	err := db.Preload(clause.Associations).Where("room_code = ? AND presenter_id = ?", code, presenterId).First(&room).Error
@@ -53,4 +53,15 @@ func (r *RoomRepository) Search(db *gorm.DB, presenterId uint) ([]entity.Room, e
 	}
 
 	return rooms, nil
+}
+
+// FindByRoomCode find room by room code
+func (r *RoomRepository) FindByRoomCode(db *gorm.DB, code string) (*entity.Room, error) {
+	var room entity.Room
+	err := db.Where("room_code = ?", code).First(&room).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	return &room, nil
 }
