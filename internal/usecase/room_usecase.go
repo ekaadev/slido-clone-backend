@@ -160,6 +160,40 @@ func (c *RoomUseCase) UpdateToClosed(ctx context.Context, request *model.UpdateT
 	return converter.UpdateToCloseRoomToResponse(room), nil
 }
 
+// Search usecase untuk mencari room yang dimiliki oleh presenter
+func (c *RoomUseCase) Search(ctx context.Context, request *model.SearchRoomsRequest) (*model.RoomListResponse, error) {
+	// begin transaction
+	tx := c.DB.WithContext(ctx).Begin()
+	defer tx.Rollback()
+
+	// validate search room request
+	if err := c.Validate.Struct(request); err != nil {
+		c.Log.Warnf("Invalid request: %+v", err)
+		return nil, fiber.ErrBadRequest
+	}
+
+	// logic to search rooms by presenter id
+	// call repository to search rooms
+	rooms, err := c.RoomRepository.Search(tx, request.PresenterID)
+	if err != nil {
+		c.Log.Warnf("Failed to search rooms: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// commit transaction
+	if err = tx.Commit().Error; err != nil {
+		c.Log.Warnf("Failed to commit transaction: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// return room list response
+	responses := make([]*model.RoomListItem, len(rooms))
+	for i, room := range rooms {
+		responses[i] = converter.RoomToListItemResponse(&room)
+	}
+	return converter.RoomsToListResponse(responses), nil
+}
+
 // GenerateRoomCode generate with crypto/rand
 func GenerateRoomCode(n int) (string, error) {
 	result := make([]byte, n)

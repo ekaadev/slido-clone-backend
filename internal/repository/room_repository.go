@@ -42,3 +42,14 @@ func (r *RoomRepository) FindById(db *gorm.DB, id uint, presenterId uint) (*enti
 
 	return &room, err
 }
+
+// Search get all rooms by presenter id
+func (r *RoomRepository) Search(db *gorm.DB, presenterId uint) ([]entity.Room, error) {
+	var rooms []entity.Room
+	err := db.Preload("Participants").Where("presenter_id = ?", presenterId).Find(&rooms).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return rooms, nil
+}

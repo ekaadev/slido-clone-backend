@@ -62,3 +62,20 @@ func UpdateToCloseRoomToResponse(update *entity.Room) *model.UpdateToCloseRoomRe
 		Room: *RoomToUpdateToCloseResponse(update),
 	}
 }
+
+func RoomToListItemResponse(room *entity.Room) *model.RoomListItem {
+	return &model.RoomListItem{
+		ID:                room.ID,
+		RoomCode:          room.RoomCode,
+		Title:             room.Title,
+		Status:            room.Status,
+		ParticipantsCount: len(room.Participants),
+		CreatedAt:         room.CreatedAt,
+	}
+}
+
+func RoomsToListResponse(roomsList []*model.RoomListItem) *model.RoomListResponse {
+	return &model.RoomListResponse{
+		RoomListItem: roomsList,
+	}
+}

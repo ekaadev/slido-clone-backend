@@ -61,7 +61,7 @@ type RoomListItem struct {
 }
 
 type RoomListResponse struct {
-	RoomListItem []RoomListItem `json:"rooms"`
+	RoomListItem []*RoomListItem `json:"rooms"`
 }
 
 type GetRoomRequestByRoomCode struct {
@@ -83,4 +83,8 @@ type UpdateToCloseRoom struct {
 
 type UpdateToCloseRoomResponse struct {
 	Room UpdateToCloseRoom `json:"room"`
+}
+
+type SearchRoomsRequest struct {
+	PresenterID uint `json:"-" validate:"required,min=1"`
 }

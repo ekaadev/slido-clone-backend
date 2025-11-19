@@ -112,3 +112,26 @@ func (c *RoomController) UpdateToClosed(ctx *fiber.Ctx) error {
 		Data: response,
 	})
 }
+
+// Search handler yang digunakan untuk mencari semua room berdasarkan presenter id
+func (c *RoomController) Search(ctx *fiber.Ctx) error {
+	// get user from locals
+	auth := middleware.GetUser(ctx)
+
+	// create model search room request
+	request := &model.SearchRoomsRequest{
+		PresenterID: *auth.UserID,
+	}
+
+	// call usecase to search room
+	response, err := c.RoomUseCase.Search(ctx.UserContext(), request)
+	if err != nil {
+		c.Log.Warnf("Failed to search rooms: %s", err)
+		return err
+	}
+
+	// return response
+	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
+		Data: response,
+	})
+}

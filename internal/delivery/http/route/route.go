@@ -30,4 +30,5 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Post("/api/v1/rooms", c.RoomController.Create)
 	c.App.Get("/api/v1/rooms/:room_code", c.RoomController.Get)
 	c.App.Patch("/api/v1/rooms/:room_id/close", c.RoomController.UpdateToClosed)
+	c.App.Get("/api/v1/users/me/rooms", c.RoomController.Search)
 }
