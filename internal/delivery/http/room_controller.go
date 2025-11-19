@@ -53,15 +53,11 @@ func (c *RoomController) Create(ctx *fiber.Ctx) error {
 
 // Get handler yang digunakan untuk mencari room berdasarkan room code
 func (c *RoomController) Get(ctx *fiber.Ctx) error {
-	// get user from locals
-	auth := middleware.GetUser(ctx)
-
 	// create model get room request
 	// get room code from params
 	// assign value to model request
 	request := &model.GetRoomRequestByRoomCode{
-		RoomCode:    ctx.Params("room_code"),
-		PresenterID: *auth.UserID,
+		RoomCode: ctx.Params("room_code"),
 	}
 
 	// call usecase to get room

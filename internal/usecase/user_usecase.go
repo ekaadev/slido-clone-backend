@@ -195,6 +195,11 @@ func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequ
 		return nil, fiber.ErrNotFound
 	}
 
+	if roomExisting.Status == "closed" {
+		c.Log.Warnf("Room is closed with code: %s", request.RoomCode)
+		return nil, fiber.ErrBadRequest
+	}
+
 	// create participant entity
 	participant := &entity.Participant{
 		RoomID:      roomExisting.ID,

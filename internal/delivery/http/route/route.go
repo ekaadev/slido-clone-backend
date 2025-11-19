@@ -24,12 +24,14 @@ func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Post("/api/v1/users/register", c.UserController.Register)
 	c.App.Post("/api/v1/users/login", c.UserController.Login)
 	c.App.Post("/api/v1/users/anonymous", c.UserController.Anon)
+
+	c.App.Get("/api/v1/rooms/:room_code", c.RoomController.Get)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Use(c.AuthMiddleware)
 	c.App.Post("/api/v1/rooms", c.RoomController.Create)
-	c.App.Get("/api/v1/rooms/:room_code", c.RoomController.Get)
 	c.App.Patch("/api/v1/rooms/:room_id/close", c.RoomController.UpdateToClosed)
+
 	c.App.Get("/api/v1/users/me/rooms", c.RoomController.Search)
 }

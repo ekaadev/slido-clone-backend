@@ -65,8 +65,7 @@ type RoomListResponse struct {
 }
 
 type GetRoomRequestByRoomCode struct {
-	PresenterID uint   `json:"-" validate:"required,min=1"`
-	RoomCode    string `json:"-" validate:"required,len=6,alphanum"`
+	RoomCode string `json:"-" validate:"required,len=6,alphanum"`
 }
 
 type UpdateToCloseRoomRequestByID struct {

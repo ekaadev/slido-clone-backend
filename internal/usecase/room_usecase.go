@@ -79,6 +79,7 @@ func (c *RoomUseCase) Create(ctx context.Context, request *model.CreateRoomReque
 	return converter.RoomToCreateRoomResponse(room), nil
 }
 
+// Get usecase untuk mendapatkan detail room berdasarkan room code
 func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequestByRoomCode) (*model.GetRoomDetailResponse, error) {
 	// begin transaction
 	tx := c.DB.WithContext(ctx).Begin()
@@ -93,7 +94,7 @@ func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequestByRo
 
 	// logic to get room by room code
 	// call repository to find room by room code
-	existingRoom, err := c.RoomRepository.FindByRoomCodeAndPresenterId(tx, request.RoomCode, request.PresenterID)
+	existingRoom, err := c.RoomRepository.FindByRoomCode(tx, request.RoomCode)
 	if err != nil {
 		c.Log.Warnf("Failed to find room by room code: %+v", err)
 		return nil, fiber.ErrInternalServerError
