@@ -143,7 +143,6 @@ Response: 201
 
 ```http
 GET /rooms/:room_code
-Authorization: Bearer {token}
 ```
 
 Response: 200
