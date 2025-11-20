@@ -262,7 +262,8 @@ Response: 200
       "xp_score": 0,
       "is_anonymous": false,
       "joined_at": "2024-11-11T10:05:00Z"
-    }
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }
 }
 ```
