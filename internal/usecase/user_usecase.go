@@ -200,11 +200,13 @@ func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequ
 		return nil, fiber.ErrBadRequest
 	}
 
+	anon := true
+
 	// create participant entity
 	participant := &entity.Participant{
 		RoomID:      roomExisting.ID,
 		DisplayName: "Anonymous",
-		IsAnonymous: true,
+		IsAnonymous: &anon,
 	}
 
 	// create participant in repository
@@ -224,7 +226,7 @@ func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequ
 		ParticipantID: &participant.ID,
 		RoomID:        &roomExisting.ID,
 		DisplayName:   participant.DisplayName,
-		IsAnonymous:   participant.IsAnonymous,
+		IsAnonymous:   *participant.IsAnonymous,
 	})
 
 	// return and convert to anonymous user response
