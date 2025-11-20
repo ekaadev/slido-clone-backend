@@ -8,7 +8,7 @@ type Participant struct {
 	UserID      *uint     `gorm:"column:user_id;index"` // NULL for anonymous
 	DisplayName string    `gorm:"column:display_name;type:varchar(100);not null"`
 	XPScore     int       `gorm:"column:xp_score;type:int unsigned;default:0;not null;index:idx_participants_xp_score"`
-	IsAnonymous bool      `gorm:"column:is_anonymous;default:true;not null"`
+	IsAnonymous *bool     `gorm:"column:is_anonymous;default:true;not null"`
 	JoinedAt    time.Time `gorm:"column:joined_at;autoCreateTime;not null;index:idx_participants_joined_at"`
 
 	// Relationships
