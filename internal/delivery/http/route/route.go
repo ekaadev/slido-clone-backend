@@ -7,10 +7,11 @@ import (
 )
 
 type RouteConfig struct {
-	App            *fiber.App
-	UserController *http.UserController
-	RoomController *http.RoomController
-	AuthMiddleware fiber.Handler
+	App                   *fiber.App
+	UserController        *http.UserController
+	RoomController        *http.RoomController
+	ParticipantController *http.ParticipantController
+	AuthMiddleware        fiber.Handler
 }
 
 // Setup running all route setup here
@@ -32,6 +33,7 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Use(c.AuthMiddleware)
 	c.App.Post("/api/v1/rooms", c.RoomController.Create)
 	c.App.Patch("/api/v1/rooms/:room_id/close", c.RoomController.UpdateToClosed)
+	c.App.Post("/api/v1/rooms/:room_code/join", c.ParticipantController.Join)
 
 	c.App.Get("/api/v1/users/me/rooms", c.RoomController.Search)
 }

@@ -1,0 +1,144 @@
+package usecase
+
+import (
+	"context"
+	"slido-clone-backend/internal/entity"
+	"slido-clone-backend/internal/model"
+	"slido-clone-backend/internal/model/converter"
+	"slido-clone-backend/internal/repository"
+	"slido-clone-backend/internal/util"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+)
+
+type ParticipantUseCase struct {
+	DB                    *gorm.DB
+	Log                   *logrus.Logger
+	Validate              *validator.Validate
+	ParticipantRepository *repository.ParticipantRepository
+	RoomRepository        *repository.RoomRepository
+	UserRepository        *repository.UserRepository
+	TokenUtil             *util.TokenUtil
+}
+
+func NewParticipantUseCase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate, participantRepository *repository.ParticipantRepository, roomRepository *repository.RoomRepository, userRepository *repository.UserRepository, tokenUtil *util.TokenUtil) *ParticipantUseCase {
+	return &ParticipantUseCase{
+		DB:                    db,
+		Log:                   log,
+		Validate:              validate,
+		ParticipantRepository: participantRepository,
+		RoomRepository:        roomRepository,
+		UserRepository:        userRepository,
+		TokenUtil:             tokenUtil,
+	}
+}
+
+// Join usecase digunakan untuk participant bergabung ke dalam room
+func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRequest) (*model.JoinRoomResponse, error) {
+	// transaction begin
+	tx := c.DB.WithContext(ctx).Begin()
+	defer tx.Commit()
+
+	// validate request
+	if err := c.Validate.Struct(request); err != nil {
+		c.Log.Warnf("Invalid request body: %+v", err)
+		return nil, fiber.ErrBadRequest
+	}
+
+	// logic to join room
+	// check room exist
+	roomExisting, err := c.RoomRepository.FindByRoomCode(tx, request.RoomCode)
+	if err != nil {
+		c.Log.Warnf("Failed to find room by room code: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	if roomExisting == nil {
+		c.Log.Warnf("Room not found with room code: %s", request.RoomCode)
+		return nil, fiber.ErrNotFound
+	}
+
+	if roomExisting.Status == "closed" {
+		c.Log.Warnf("Room is closed with room code: %s", request.RoomCode)
+		return nil, fiber.ErrBadRequest
+	}
+
+	// check user registered is exist
+	userExisting, err := c.UserRepository.FindByUsername(tx, request.Username)
+	if err != nil {
+		c.Log.Warnf("Failed to find user by username: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	if userExisting == nil {
+		c.Log.Warnf("User not found with username: %s", request.Username)
+		return nil, fiber.ErrUnauthorized
+	}
+
+	// check user is the room owner
+	if roomExisting.PresenterID == userExisting.ID {
+		c.Log.Warnf("User is the room owner with username: %s", request.Username)
+		return nil, fiber.ErrBadRequest
+	}
+
+	// check participant already join room
+	participantExisting, err := c.ParticipantRepository.FindByRoomIDAndUserID(tx, roomExisting.ID, userExisting.ID)
+	if err != nil {
+		c.Log.Warnf("Failed to find participant by room ID and user ID: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	if participantExisting != nil {
+		c.Log.Warnf("Participant already joined room with room code: %s", request.RoomCode)
+		return nil, fiber.ErrBadRequest
+	}
+
+	anon := false
+
+	// create participant entity
+	participant := &entity.Participant{
+		RoomID:      roomExisting.ID,
+		UserID:      &userExisting.ID,
+		DisplayName: userExisting.Username,
+		IsAnonymous: &anon,
+	}
+
+	// check is display name provided
+	if request.DisplayName != "" {
+		participant.DisplayName = request.DisplayName
+	}
+
+	// create participant in repository
+	if err = c.ParticipantRepository.Create(tx, participant); err != nil {
+		c.Log.Warnf("Failed to create participant: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// transaction commit
+	if err = tx.Commit().Error; err != nil {
+		c.Log.Warnf("Failed to commit transaction: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// generate new token (update jwt token)
+	token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
+		UserID:        &userExisting.ID,
+		ParticipantID: &participant.ID,
+		RoomID:        &roomExisting.ID,
+		Username:      userExisting.Username,
+		DisplayName:   participant.DisplayName,
+		Email:         userExisting.Email,
+		Role:          "participant",
+		IsAnonymous:   *participant.IsAnonymous,
+	})
+	if err != nil {
+		c.Log.Warnf("Failed to create token: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// return response
+	return converter.ParticipantToJoinRoomResponse(participant, token), nil
+}

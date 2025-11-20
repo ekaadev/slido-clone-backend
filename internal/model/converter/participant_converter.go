@@ -11,7 +11,14 @@ func ParticipantToResponse(participant *entity.Participant) *model.ParticipantRe
 		RoomID:      participant.RoomID,
 		DisplayName: participant.DisplayName,
 		XPScore:     participant.XPScore,
-		IsAnonymous: participant.IsAnonymous,
+		IsAnonymous: *participant.IsAnonymous,
 		JoinedAt:    participant.JoinedAt,
+	}
+}
+
+func ParticipantToJoinRoomResponse(participant *entity.Participant, token string) *model.JoinRoomResponse {
+	return &model.JoinRoomResponse{
+		Participant: *ParticipantToResponse(participant),
+		Token:       token,
 	}
 }

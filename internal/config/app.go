@@ -37,20 +37,23 @@ func Bootstrap(config *BootstrapConfig) {
 	// setup use cases
 	userUseCase := usecase.NewUserUseCase(config.DB, config.Log, config.Validator, userRepository, participantRepository, roomRepository, tokenUtil)
 	roomUseCase := usecase.NewRoomUseCase(config.DB, config.Log, config.Validator, roomRepository)
+	participantUseCase := usecase.NewParticipantUseCase(config.DB, config.Log, config.Validator, participantRepository, roomRepository, userRepository, tokenUtil)
 
 	// setup controller
 	userController := http.NewUserController(config.Log, userUseCase)
 	roomController := http.NewRoomController(config.Log, roomUseCase)
+	participantController := http.NewParticipantController(config.Log, participantUseCase)
 
 	// setup middleware
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
 
 	// untuk configurasi route
 	routeConfig := route.RouteConfig{
-		App:            config.App,
-		UserController: userController,
-		RoomController: roomController,
-		AuthMiddleware: authMiddleware,
+		App:                   config.App,
+		UserController:        userController,
+		RoomController:        roomController,
+		ParticipantController: participantController,
+		AuthMiddleware:        authMiddleware,
 	}
 
 	routeConfig.Setup()
