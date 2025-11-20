@@ -22,3 +22,18 @@ func ParticipantToJoinRoomResponse(participant *entity.Participant, token string
 		Token:       token,
 	}
 }
+
+func ParticipantToListItem(participant *entity.Participant) *model.ParticipantListItem {
+	return &model.ParticipantListItem{
+		ID:          participant.ID,
+		DisplayName: participant.DisplayName,
+		XPScore:     participant.XPScore,
+		IsAnonymous: *participant.IsAnonymous,
+	}
+}
+
+func ParticipantsToListResponse(participants []*model.ParticipantListItem) *model.ParticipantListResponse {
+	return &model.ParticipantListResponse{
+		Participants: participants,
+	}
+}

@@ -19,11 +19,22 @@ type ParticipantResponse struct {
 	JoinedAt    time.Time `json:"joined_at,omitempty"`
 }
 
+type ListParticipantsRequest struct {
+	RoomID        uint `json:"-" validate:"required,min=1"`
+	ParticipantID uint `json:"-" validate:"required,min=1"`
+	Page          int  `json:"page" validate:"required,min=1"`
+	Size          int  `json:"size" validate:"required,min=1,max=100"`
+}
+
 type ParticipantListItem struct {
 	ID          uint   `json:"id"`
 	DisplayName string `json:"display_name"`
 	XPScore     int    `json:"xp_score"`
 	IsAnonymous bool   `json:"is_anonymous"`
+}
+
+type ParticipantListResponse struct {
+	Participants []*ParticipantListItem `json:"participants"`
 }
 
 type JoinRoomResponse struct {

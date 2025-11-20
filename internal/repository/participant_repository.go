@@ -28,3 +28,20 @@ func (r *ParticipantRepository) FindByRoomIDAndUserID(db *gorm.DB, roomID uint, 
 
 	return &participant, err
 }
+
+// List mencari participant berdasarkan room ID dengan pagination
+func (r *ParticipantRepository) List(db *gorm.DB, roomID uint, page int, size int) ([]entity.Participant, int64, error) {
+	var participants []entity.Participant
+	err := db.Where("room_id = ?", roomID).Offset((page - 1) * size).Limit(size).Find(&participants).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var total int64
+	err = db.Model(&entity.Participant{}).Where("room_id = ?", roomID).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return participants, total, nil
+}

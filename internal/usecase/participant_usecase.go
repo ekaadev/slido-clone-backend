@@ -142,3 +142,50 @@ func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRe
 	// return response
 	return converter.ParticipantToJoinRoomResponse(participant, token), nil
 }
+
+// List usecase digunakan untuk mencari participant dalam room
+func (c *ParticipantUseCase) List(ctx context.Context, request *model.ListParticipantsRequest) (*model.ParticipantListResponse, int64, error) {
+	// begin transaction
+	tx := c.DB.WithContext(ctx).Begin()
+	defer tx.Commit()
+
+	// validate request
+	if err := c.Validate.Struct(request); err != nil {
+		c.Log.Warnf("Invalid request body: %+v", err)
+		return nil, 0, fiber.ErrBadRequest
+	}
+
+	// logic to list participants
+	// check room exist
+	total, err := c.RoomRepository.CountById(tx, request.RoomID)
+	if err != nil {
+		c.Log.Warnf("Failed to count room by ID: %+v", err)
+		return nil, 0, fiber.ErrInternalServerError
+	}
+
+	if total == 0 {
+		c.Log.Warnf("Room not found with ID: %d", request.RoomID)
+		return nil, 0, fiber.ErrNotFound
+	}
+
+	// list participants from repository
+	participants, total, err := c.ParticipantRepository.List(tx, request.RoomID, request.Page, request.Size)
+	if err != nil {
+		c.Log.Warnf("Failed to list participants: %+v", err)
+		return nil, 0, fiber.ErrInternalServerError
+	}
+
+	// commit transaction
+	if err = tx.Commit().Error; err != nil {
+		c.Log.Warnf("Failed to commit transaction: %+v", err)
+		return nil, 0, fiber.ErrInternalServerError
+	}
+
+	// return response
+	responses := make([]*model.ParticipantListItem, len(participants))
+	for i, participant := range participants {
+		responses[i] = converter.ParticipantToListItem(&participant)
+	}
+
+	return converter.ParticipantsToListResponse(responses), total, nil
+}
