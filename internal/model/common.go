@@ -7,7 +7,8 @@ type WebResponse struct {
 }
 
 type PaginationResponse struct {
-	Total  int `json:"total"`
-	Limit  int `json:"limit"`
-	Offset int `json:"offset"`
+	Page      int   `json:"page"`
+	Size      int   `json:"size"`
+	TotalItem int64 `json:"total_item"`
+	TotalPage int64 `json:"total_page"`
 }
