@@ -271,14 +271,14 @@ Response: 200
 ### Get Participants List
 
 ```http
-GET /rooms/:room_code/participants
+GET /rooms/:room_id/participants
 Authorization: Bearer {token}
 ```
 
 Query Parameters:
 
-- `limit` (default: 50)
-- `offset` (default: 0)
+- `page_size` (default: 10)
+- `page` (default: 1)
 
 Response: 200
 
@@ -301,9 +301,10 @@ Response: 200
     ]
   },
   "paging": {
-    "total": 45,
-    "limit": 50,
-    "offset": 0
+    "page": 1,
+    "size": 10,
+    "total_item": 10,
+    "total_page": 1
   }
 }
 ```
