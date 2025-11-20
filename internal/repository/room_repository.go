@@ -33,8 +33,8 @@ func (r *RoomRepository) FindByRoomCodeAndPresenterId(db *gorm.DB, code string, 
 	return &room, err
 }
 
-// FindById find room by id
-func (r *RoomRepository) FindById(db *gorm.DB, id uint, presenterId uint) (*entity.Room, error) {
+// FindByIdAndPresenterId find room by id
+func (r *RoomRepository) FindByIdAndPresenterId(db *gorm.DB, id uint, presenterId uint) (*entity.Room, error) {
 	var room entity.Room
 	err := db.Where("id = ? AND presenter_id = ?", id, presenterId).First(&room).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

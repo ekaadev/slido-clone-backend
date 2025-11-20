@@ -130,7 +130,7 @@ func (c *RoomUseCase) UpdateToClosed(ctx context.Context, request *model.UpdateT
 	}
 
 	// logic to update room by id
-	room, err := c.RoomRepository.FindById(tx, request.RoomID, request.PresenterID)
+	room, err := c.RoomRepository.FindByIdAndPresenterId(tx, request.RoomID, request.PresenterID)
 	if err != nil {
 		c.Log.Warnf("Failed to find room by id: %+v", err)
 		return nil, fiber.ErrInternalServerError
