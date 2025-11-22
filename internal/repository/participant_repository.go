@@ -45,3 +45,14 @@ func (r *ParticipantRepository) List(db *gorm.DB, roomID uint, page int, size in
 
 	return participants, total, nil
 }
+
+// FindParticipantInRoom mencari participant berdasarkan room ID dan participant ID
+func (r *ParticipantRepository) FindParticipantInRoom(db *gorm.DB, roomID uint, participantID uint) (*entity.Participant, error) {
+	var participant entity.Participant
+	err := db.Where("room_id = ? AND id = ?", roomID, participantID).First(&participant).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	return &participant, err
+}

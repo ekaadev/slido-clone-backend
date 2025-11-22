@@ -41,3 +41,8 @@ type JoinRoomResponse struct {
 	Participant ParticipantResponse `json:"participant"`
 	Token       string              `json:"token"`
 }
+
+type ParticipantInfo struct {
+	ID          uint   `json:"id"`
+	DisplayName string `json:"display_name"`
+}

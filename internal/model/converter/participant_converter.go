@@ -37,3 +37,10 @@ func ParticipantsToListResponse(participants []*model.ParticipantListItem) *mode
 		Participants: participants,
 	}
 }
+
+func ParticipantToInfo(participant *entity.Participant) *model.ParticipantInfo {
+	return &model.ParticipantInfo{
+		ID:          participant.ID,
+		DisplayName: participant.DisplayName,
+	}
+}
