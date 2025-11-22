@@ -1,0 +1,36 @@
+package websocket
+
+import "encoding/json"
+
+type WSMessage struct {
+	Event string          `json:"event"`
+	Data  json.RawMessage `json:"data"`
+}
+
+// Event types constants
+const (
+	// Room events
+	EventRoomJoin     = "room:join"
+	EventRoomUserJoin = "room:user_joined"
+	EventRoomUserLeft = "room:user_left"
+	EventRoomClosed   = "room:closed"
+
+	// Message events
+	EventMessageSend = "message:send" // Client -> Server
+	EventMessageNew  = "message:new"  // Server -> Client (broadcast)
+	EventChatTyping  = "chat:typing"  // Bidirectional
+
+	// Question events
+	EventQuestionCreated   = "question:created"
+	EventQuestionUpvoted   = "question:upvoted"
+	EventQuestionValidated = "question:validated"
+
+	// Poll events
+	EventPollCreated       = "poll:created"
+	EventPollResultsUpdate = "poll:results_updated"
+	EventPollClosed        = "poll:closed"
+
+	// Leaderboard events
+	EventLeaderboardUpdate = "leaderboard:updated"
+	EventXPAwarded         = "xp:awarded"
+)
