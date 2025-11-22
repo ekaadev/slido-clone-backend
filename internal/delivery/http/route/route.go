@@ -2,6 +2,7 @@ package route
 
 import (
 	"slido-clone-backend/internal/delivery/http"
+	"slido-clone-backend/internal/delivery/websocket"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -11,7 +12,9 @@ type RouteConfig struct {
 	UserController        *http.UserController
 	RoomController        *http.RoomController
 	ParticipantController *http.ParticipantController
+	MessageController     *http.MessageController
 	AuthMiddleware        fiber.Handler
+	WSHandler             *websocket.WebSocketHandler
 }
 
 // Setup running all route setup here
@@ -27,6 +30,9 @@ func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Post("/api/v1/users/anonymous", c.UserController.Anon)
 
 	c.App.Get("/api/v1/rooms/:room_code", c.RoomController.Get)
+
+	// websocket section route
+	c.App.Get("/ws", c.WSHandler.HandleWebSocket)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {
@@ -37,4 +43,8 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Get("/api/v1/rooms/:room_id/participants", c.ParticipantController.List)
 
 	c.App.Get("/api/v1/users/me/rooms", c.RoomController.Search)
+
+	c.App.Post("/api/v1/rooms/:room_id/messages", c.MessageController.Send)
+	c.App.Get("/api/v1/rooms/:room_id/messages", c.MessageController.List)
+
 }
