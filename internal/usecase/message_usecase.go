@@ -20,9 +20,10 @@ type MessageUseCase struct {
 	MessageRepository     *repository.MessageRepository
 	RoomRepository        *repository.RoomRepository
 	ParticipantRepository *repository.ParticipantRepository
+	XPTransactionUseCase  *XPTransactionUseCase
 }
 
-func NewMessageUseCase(db *gorm.DB, validate *validator.Validate, log *logrus.Logger, messageRepository *repository.MessageRepository, roomRepository *repository.RoomRepository, participantRepository *repository.ParticipantRepository) *MessageUseCase {
+func NewMessageUseCase(db *gorm.DB, validate *validator.Validate, log *logrus.Logger, messageRepository *repository.MessageRepository, roomRepository *repository.RoomRepository, participantRepository *repository.ParticipantRepository, xpTransactionUseCase *XPTransactionUseCase) *MessageUseCase {
 	return &MessageUseCase{
 		DB:                    db,
 		Validate:              validate,
@@ -30,6 +31,7 @@ func NewMessageUseCase(db *gorm.DB, validate *validator.Validate, log *logrus.Lo
 		MessageRepository:     messageRepository,
 		RoomRepository:        roomRepository,
 		ParticipantRepository: participantRepository,
+		XPTransactionUseCase:  xpTransactionUseCase,
 	}
 }
 
@@ -85,6 +87,12 @@ func (c *MessageUseCase) Send(ctx context.Context, request *model.SendMessageReq
 	// load participant relation
 	if err = tx.Preload("Participant").First(message, message.ID).Error; err != nil {
 		c.Log.Warnf("failed to laod participant relation: %v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// add xp to participant for sending message
+	if err = c.XPTransactionUseCase.AddXPForMessage(tx, request.RoomID, request.ParticipantID, message.ID); err != nil {
+		c.Log.Warnf("failed to add xp and update participant score: %v", err)
 		return nil, fiber.ErrInternalServerError
 	}
 

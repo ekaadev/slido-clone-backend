@@ -33,6 +33,7 @@ func Bootstrap(config *BootstrapConfig) {
 	roomRepository := repository.NewRoomRepository(config.Log)
 	participantRepository := repository.NewParticipantRepository(config.Log)
 	messageRepository := repository.NewMessageRepository(config.Log)
+	xpTransactionRepository := repository.NewXPTransactionRepository(config.Log)
 
 	// setup utils
 	tokenUtil := util.NewTokenUtil(config.Config.GetString("JWT_SECRET"), config.Redis)
@@ -41,7 +42,8 @@ func Bootstrap(config *BootstrapConfig) {
 	userUseCase := usecase.NewUserUseCase(config.DB, config.Log, config.Validator, userRepository, participantRepository, roomRepository, tokenUtil)
 	roomUseCase := usecase.NewRoomUseCase(config.DB, config.Log, config.Validator, roomRepository, participantRepository)
 	participantUseCase := usecase.NewParticipantUseCase(config.DB, config.Log, config.Validator, participantRepository, roomRepository, userRepository, tokenUtil)
-	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository)
+	xpTransactionUseCase := usecase.NewXPTransactionUseCase(config.DB, config.Validator, config.Log, xpTransactionRepository)
+	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository, xpTransactionUseCase)
 
 	// setup HTTP controllers
 	userController := http.NewUserController(config.Log, userUseCase)
