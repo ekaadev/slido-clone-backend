@@ -211,3 +211,59 @@ func (c *ParticipantUseCase) List(ctx context.Context, request *model.ListPartic
 
 	return converter.ParticipantsToListResponse(responses), total, nil
 }
+
+func (c *ParticipantUseCase) Leaderboard(ctx context.Context, request *model.GetLeaderboardRequest) (*model.LeaderboardResponse, error) {
+	// begin transaction
+	tx := c.DB.WithContext(ctx).Begin()
+	defer tx.Commit()
+
+	// validate request
+	if err := c.Validate.Struct(request); err != nil {
+		c.Log.Warnf("invalid request body: %+v", err)
+		return nil, fiber.ErrBadRequest
+	}
+
+	// logic to get leaderboard
+	// check room exist
+	roomCount, err := c.RoomRepository.CountById(tx, request.RoomID)
+	if err != nil {
+		c.Log.Warnf("failed to count room by id: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	if roomCount == 0 {
+		c.Log.Warnf("room not found with id: %d", request.RoomID)
+		return nil, fiber.ErrNotFound
+	}
+
+	// get total participants in the room
+	participantCountByRoomID, err := c.ParticipantRepository.CountByRoomID(tx, request.RoomID)
+	if err != nil {
+		c.Log.Warnf("failed to count participants by room id: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// get leaderboard from repository
+	leaderboard, err := c.ParticipantRepository.ListLeaderboard(tx, request.RoomID)
+	if err != nil {
+		c.Log.Warnf("failed to list leaderboard: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// get my rank (from participant ID)
+	rank, xpScore, err := c.ParticipantRepository.GetRankAndScoreByParticipantID(tx, request.RoomID, request.ParticipantID)
+
+	myRank := &model.MyRank{
+		Rank:    int(rank),
+		XPScore: int(xpScore),
+	}
+
+	// commit transaction
+	if err = tx.Commit().Error; err != nil {
+		c.Log.Warnf("failed to commit transaction: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	// return response
+	return converter.ParticipantsToLeaderboardResponse(leaderboard, myRank, int(participantCountByRoomID)), nil
+}

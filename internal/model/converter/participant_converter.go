@@ -44,3 +44,28 @@ func ParticipantToInfo(participant *entity.Participant) *model.ParticipantInfo {
 		DisplayName: participant.DisplayName,
 	}
 }
+
+func ParticipantToLeaderboardEntry(participant *entity.Participant, rank int) *model.LeaderboardEntry {
+	return &model.LeaderboardEntry{
+		Rank: rank,
+		Participant: model.ParticipantInfo{
+			ID:          participant.ID,
+			DisplayName: participant.DisplayName,
+		},
+		XPScore:     participant.XPScore,
+		IsAnonymous: *participant.IsAnonymous,
+	}
+}
+
+func ParticipantsToLeaderboardResponse(participants []entity.Participant, myRank *model.MyRank, totalParticipants int) *model.LeaderboardResponse {
+	leaderboard := make([]model.LeaderboardEntry, len(participants))
+	for i, participant := range participants {
+		leaderboard[i] = *ParticipantToLeaderboardEntry(&participant, i+1)
+	}
+
+	return &model.LeaderboardResponse{
+		Leaderboard:       leaderboard,
+		MyRank:            myRank,
+		TotalParticipants: totalParticipants,
+	}
+}

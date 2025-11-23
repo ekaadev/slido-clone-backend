@@ -95,3 +95,35 @@ func (c *ParticipantController) List(ctx *fiber.Ctx) error {
 		Paging: paging,
 	})
 }
+
+// Leaderboard handler untuk mendapatkan leaderboard dalam room
+func (c *ParticipantController) Leaderboard(ctx *fiber.Ctx) error {
+	// get auth from locals
+	auth := middleware.GetUser(ctx)
+
+	// create model request
+	request := &model.GetLeaderboardRequest{
+		ParticipantID: *auth.ParticipantID,
+	}
+
+	roomId := ctx.Params("room_id")
+	idUint64, err := strconv.ParseUint(roomId, 10, 64)
+	if err != nil {
+		c.Log.Warnf("Invalid room id: %s", err)
+		return fiber.ErrBadRequest
+	}
+
+	request.RoomID = uint(idUint64)
+
+	// call usecase to get leaderboard
+	responses, err := c.ParticipantUseCase.Leaderboard(ctx.UserContext(), request)
+	if err != nil {
+		c.Log.Warnf("request failed: %v", err)
+		return err
+	}
+
+	// return response
+	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
+		Data: responses,
+	})
+}

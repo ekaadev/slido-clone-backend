@@ -47,4 +47,5 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Post("/api/v1/rooms/:room_id/messages", c.MessageController.Send)
 	c.App.Get("/api/v1/rooms/:room_id/messages", c.MessageController.List)
 
+	c.App.Get("/api/v1/rooms/:room_id/leaderboard", c.ParticipantController.Leaderboard)
 }
