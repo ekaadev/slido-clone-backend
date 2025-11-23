@@ -8,12 +8,14 @@ import (
 )
 
 type EventHandler struct {
-	messageUseCase *usecase.MessageUseCase
+	messageUseCase     *usecase.MessageUseCase
+	participantUseCase *usecase.ParticipantUseCase
 }
 
-func NewEventHandler(messageUseCase *usecase.MessageUseCase) *EventHandler {
+func NewEventHandler(messageUseCase *usecase.MessageUseCase, participantUseCase *usecase.ParticipantUseCase) *EventHandler {
 	return &EventHandler{
-		messageUseCase: messageUseCase,
+		messageUseCase:     messageUseCase,
+		participantUseCase: participantUseCase,
 	}
 }
 
@@ -31,6 +33,8 @@ func (h *EventHandler) HandleMessage(client *Client, data []byte) error {
 		return h.handleMessageSend(client, wsMsg.Data)
 	case EventChatTyping:
 		return h.handleChatTyping(client, wsMsg.Data)
+	case EventLeaderboardRequest:
+		return h.handleLeaderboardRequest(client, wsMsg.Data)
 	default:
 		client.hub.log.WithField("event", wsMsg.Event).Warn("unknown event")
 		return nil
@@ -67,6 +71,7 @@ func (h *EventHandler) handleMessageSend(client *Client, data json.RawMessage) e
 		Data:  mustMarshal(response.Message),
 	}
 	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	h.broadcastLeaderboardUpdate(client)
 	return nil
 }
 
@@ -93,6 +98,51 @@ func (h *EventHandler) handleChatTyping(client *Client, data json.RawMessage) er
 	// broadcast ke room (implmenetasi nanti jika perlu exclude sender)
 	client.hub.BroadcastToRoom(client.roomID, mustMarshal(typingData))
 	return nil
+}
+
+// handleLeaderboardRequest handle request leaderboard
+func (h *EventHandler) handleLeaderboardRequest(client *Client, data json.RawMessage) error {
+	request := &model.GetLeaderboardRequest{
+		RoomID:        client.roomID,
+		ParticipantID: client.participantID,
+	}
+
+	leaderboard, err := h.participantUseCase.Leaderboard(context.Background(), request)
+	if err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to get leaderboard")
+		return err
+	}
+
+	responseData := WSMessage{
+		Event: EventLeaderboardUpdate,
+		Data:  mustMarshal(leaderboard),
+	}
+
+	client.send <- mustMarshal(responseData)
+	return nil
+}
+
+func (h *EventHandler) broadcastLeaderboardUpdate(client *Client) {
+	request := &model.GetLeaderboardRequest{
+		RoomID:        client.roomID,
+		ParticipantID: client.participantID,
+	}
+
+	leaderboard, err := h.participantUseCase.Leaderboard(context.Background(), request)
+	if err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to get leaderboard")
+		return
+	}
+
+	leaderboardData := WSMessage{
+		Event: EventLeaderboardUpdate,
+		Data: mustMarshal(map[string]interface{}{
+			"leaderboard":        leaderboard,
+			"total_participants": leaderboard.TotalParticipants,
+		}),
+	}
+
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(leaderboardData))
 }
 
 // mustMarshal helper untuk marshal JSON, panic jika error

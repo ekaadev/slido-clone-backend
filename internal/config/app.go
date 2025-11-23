@@ -59,7 +59,7 @@ func Bootstrap(config *BootstrapConfig) {
 	go hub.Run() // start hub run goroutine
 
 	// websocket handler
-	eventHandler := websocket.NewEventHandler(messageUseCase)
+	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase)
 	wsHandler := websocket.NewWebSocketHandler(hub, config.Log, tokenUtil, eventHandler)
 
 	// setup HTTP routes
