@@ -78,12 +78,6 @@ func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRe
 		return nil, fiber.ErrUnauthorized
 	}
 
-	// check user is the room owner
-	if roomExisting.PresenterID == userExisting.ID {
-		c.Log.Warnf("User is the room owner with username: %s", request.Username)
-		return nil, fiber.ErrBadRequest
-	}
-
 	// check participant already join room
 	participantExisting, err := c.ParticipantRepository.FindByRoomIDAndUserID(tx, roomExisting.ID, userExisting.ID)
 	if err != nil {
@@ -91,13 +85,41 @@ func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRe
 		return nil, fiber.ErrInternalServerError
 	}
 
+	// if participant already joined, return existing participant
 	if participantExisting != nil {
 		c.Log.Warnf("Participant already joined room with room code: %s", request.RoomCode)
-		return nil, fiber.ErrBadRequest
+
+		if err = tx.Commit().Error; err != nil {
+			c.Log.Warnf("Failed to commit transaction: %+v", err)
+			return nil, fiber.ErrInternalServerError
+		}
+
+		// Determine role based on presenter status
+		role := "participant"
+		if roomExisting.PresenterID == userExisting.ID {
+			role = "presenter"
+		}
+
+		// Generate new token
+		token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
+			UserID:        &userExisting.ID,
+			ParticipantID: &participantExisting.ID,
+			RoomID:        &roomExisting.ID,
+			Username:      userExisting.Username,
+			DisplayName:   participantExisting.DisplayName,
+			Email:         userExisting.Email,
+			Role:          role,
+			IsAnonymous:   *participantExisting.IsAnonymous,
+		})
+		if err != nil {
+			c.Log.Warnf("Failed to create token: %+v", err)
+			return nil, fiber.ErrInternalServerError
+		}
+
+		return converter.ParticipantToJoinRoomResponse(participantExisting, token), nil
 	}
 
 	anon := false
-
 	// create participant entity
 	participant := &entity.Participant{
 		RoomID:      roomExisting.ID,

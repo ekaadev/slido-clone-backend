@@ -19,19 +19,21 @@ import (
 const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 type RoomUseCase struct {
-	DB             *gorm.DB
-	Log            *logrus.Logger
-	Validate       *validator.Validate
-	RoomRepository *repository.RoomRepository
+	DB                    *gorm.DB
+	Log                   *logrus.Logger
+	Validate              *validator.Validate
+	RoomRepository        *repository.RoomRepository
+	ParticipantRepository *repository.ParticipantRepository
 }
 
 // NewRoomUseCase create new instance of RoomUseCase
-func NewRoomUseCase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate, roomRepository *repository.RoomRepository) *RoomUseCase {
+func NewRoomUseCase(db *gorm.DB, log *logrus.Logger, validate *validator.Validate, roomRepository *repository.RoomRepository, participantRepository *repository.ParticipantRepository) *RoomUseCase {
 	return &RoomUseCase{
-		DB:             db,
-		Log:            log,
-		Validate:       validate,
-		RoomRepository: roomRepository,
+		DB:                    db,
+		Log:                   log,
+		Validate:              validate,
+		RoomRepository:        roomRepository,
+		ParticipantRepository: participantRepository,
 	}
 }
 
@@ -69,6 +71,19 @@ func (c *RoomUseCase) Create(ctx context.Context, request *model.CreateRoomReque
 		return nil, fiber.ErrInternalServerError
 	}
 
+	anon := false
+	participant := &entity.Participant{
+		RoomID:      room.ID,
+		UserID:      &request.PresenterID,
+		DisplayName: "Presenter",
+		IsAnonymous: &anon,
+	}
+
+	if err = c.ParticipantRepository.Create(tx, participant); err != nil {
+		c.Log.Warnf("failed to create presenter as participant: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
+
 	// commit transaction
 	if err = tx.Commit().Error; err != nil {
 		c.Log.Warnf("Failed to commit transaction: %+v", err)
@@ -76,7 +91,7 @@ func (c *RoomUseCase) Create(ctx context.Context, request *model.CreateRoomReque
 	}
 
 	// return room response
-	return converter.RoomToCreateRoomResponse(room), nil
+	return converter.RoomToCreateRoomResponse(room, participant.ID), nil
 }
 
 // Get usecase untuk mendapatkan detail room berdasarkan room code

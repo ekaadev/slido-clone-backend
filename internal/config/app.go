@@ -39,13 +39,13 @@ func Bootstrap(config *BootstrapConfig) {
 
 	// setup use cases
 	userUseCase := usecase.NewUserUseCase(config.DB, config.Log, config.Validator, userRepository, participantRepository, roomRepository, tokenUtil)
-	roomUseCase := usecase.NewRoomUseCase(config.DB, config.Log, config.Validator, roomRepository)
+	roomUseCase := usecase.NewRoomUseCase(config.DB, config.Log, config.Validator, roomRepository, participantRepository)
 	participantUseCase := usecase.NewParticipantUseCase(config.DB, config.Log, config.Validator, participantRepository, roomRepository, userRepository, tokenUtil)
 	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository)
 
 	// setup HTTP controllers
 	userController := http.NewUserController(config.Log, userUseCase)
-	roomController := http.NewRoomController(config.Log, roomUseCase)
+	roomController := http.NewRoomController(config.Log, roomUseCase, tokenUtil)
 	participantController := http.NewParticipantController(config.Log, participantUseCase)
 	messageController := http.NewMessageController(config.Log, messageUseCase)
 

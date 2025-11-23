@@ -17,9 +17,10 @@ func RoomToResponse(room *entity.Room) *model.RoomResponse {
 	}
 }
 
-func RoomToCreateRoomResponse(room *entity.Room) *model.CreateRoomResponse {
+func RoomToCreateRoomResponse(room *entity.Room, participantID uint) *model.CreateRoomResponse {
 	return &model.CreateRoomResponse{
-		Room: *RoomToResponse(room),
+		Room:          *RoomToResponse(room),
+		ParticipantID: participantID,
 	}
 }
 

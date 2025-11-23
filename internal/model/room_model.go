@@ -22,7 +22,8 @@ type RoomResponse struct {
 }
 
 type CreateRoomResponse struct {
-	Room RoomResponse `json:"room"`
+	Room          RoomResponse `json:"room"`
+	ParticipantID uint         `json:"participant_id"`
 }
 
 type RoomDetailResponse struct {

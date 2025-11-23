@@ -4,6 +4,7 @@ import (
 	"slido-clone-backend/internal/delivery/http/middleware"
 	"slido-clone-backend/internal/model"
 	"slido-clone-backend/internal/usecase"
+	"slido-clone-backend/internal/util"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,13 +14,15 @@ import (
 type RoomController struct {
 	Log         *logrus.Logger
 	RoomUseCase *usecase.RoomUseCase
+	TokenUtil   *util.TokenUtil
 }
 
 // NewRoomController create new instance of RoomController
-func NewRoomController(log *logrus.Logger, roomUseCase *usecase.RoomUseCase) *RoomController {
+func NewRoomController(log *logrus.Logger, roomUseCase *usecase.RoomUseCase, tokenUtil *util.TokenUtil) *RoomController {
 	return &RoomController{
 		Log:         log,
 		RoomUseCase: roomUseCase,
+		TokenUtil:   tokenUtil,
 	}
 }
 
@@ -45,9 +48,26 @@ func (c *RoomController) Create(ctx *fiber.Ctx) error {
 		return err
 	}
 
+	newToken, err := c.TokenUtil.CreateToken(ctx.UserContext(), &model.Auth{
+		UserID:        auth.UserID,
+		ParticipantID: &response.ParticipantID,
+		RoomID:        &response.Room.ID,
+		Username:      auth.Username,
+		Email:         auth.Email,
+		Role:          "presenter",
+		IsAnonymous:   false,
+	})
+	if err != nil {
+		c.Log.Warnf("Failed to create token: %s", err)
+		return fiber.ErrInternalServerError
+	}
+
 	// return response
 	return ctx.Status(fiber.StatusCreated).JSON(model.WebResponse{
-		Data: response,
+		Data: map[string]interface{}{
+			"room":  response,
+			"token": newToken,
+		},
 	})
 }
 
