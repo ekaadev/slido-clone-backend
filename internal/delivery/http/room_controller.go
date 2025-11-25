@@ -65,8 +65,9 @@ func (c *RoomController) Create(ctx *fiber.Ctx) error {
 	// return response
 	return ctx.Status(fiber.StatusCreated).JSON(model.WebResponse{
 		Data: map[string]interface{}{
-			"room":  response,
-			"token": newToken,
+			"room":           response.Room,
+			"participant_id": response.ParticipantID,
+			"token":          newToken,
 		},
 	})
 }
