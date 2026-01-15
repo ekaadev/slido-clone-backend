@@ -58,22 +58,6 @@ func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
 	}
 
 	// upgrade http connection to websocket
-
-	//auth := middleware.GetUser(ctx)
-	//
-	//roomID := auth.RoomID
-	//if roomID == nil {
-	//	// fallback ke query param
-	//	queryRoomID := ctx.QueryInt("room_id", 0)
-	//	if queryRoomID == 0 {
-	//		wsh.log.Warnf("room_id is zero")
-	//		return fiber.ErrBadRequest
-	//	}
-	//	roomIDUint := uint(queryRoomID)
-	//	roomID = &roomIDUint
-	//}
-	//
-
 	return adaptor.HTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
