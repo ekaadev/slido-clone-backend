@@ -1,7 +1,6 @@
 package websocket
 
 import (
-	"slido-clone-backend/internal/model"
 	"slido-clone-backend/internal/util"
 
 	"github.com/gofiber/contrib/websocket"
@@ -47,20 +46,19 @@ func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
-	// save claims to locals for access in websocket handler
-	ctx.Locals("claims", claims)
-
 	// upgrade to websocket
 	// call two functions: first is to create the websocket connection handler,
 	// second is the actual handler returned by websocket.New()
-	return websocket.New(wsh.createConnectionHandler())(ctx)
-}
+	return websocket.New(func(c *websocket.Conn) {
+		wsh.log.Debug("upgraded to websocket connection")
 
-func (wsh *WebSocketHandler) createConnectionHandler() func(c *websocket.Conn) {
-	return func(c *websocket.Conn) {
-		// get claims from locals
-		claims := c.Locals("claims").(*model.Auth)
+		defer func() {
+			if r := recover(); r != nil {
+				wsh.log.Warnf("websocket connection handler panic: %v", r)
+			}
+		}()
 
+		// create new client
 		client := &Client{
 			hub:            wsh.hub,
 			conn:           c,
@@ -75,10 +73,12 @@ func (wsh *WebSocketHandler) createConnectionHandler() func(c *websocket.Conn) {
 		// register client ke hub
 		client.hub.register <- client
 
-		// run goroutine untuk baca dan tulis
+		// run write pump sebagai goroutine
 		go client.WritePump()
-		go client.ReadPump()
-	}
+
+		// run read pump di goroutine utama agar koneksi tetap terbuka
+		client.ReadPump()
+	})(ctx)
 }
 
 func getUintValue(ptr *uint) uint {

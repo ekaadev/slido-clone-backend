@@ -23,7 +23,7 @@ const (
 // Client representasi koneksi websocket ke client
 type Client struct {
 	hub  *Hub            // hub websocket
-	conn *websocket.Conn // koneksi websocket gorilla/websocket
+	conn *websocket.Conn // koneksi websocket
 	send chan []byte     // channel untuk mengirim pesan ke client
 
 	// identitas client
@@ -39,6 +39,9 @@ type Client struct {
 // ReadPump goroutine untuk membaca pesan dari client
 func (c *Client) ReadPump() {
 	defer func() {
+		if r := recover(); r != nil {
+			c.hub.log.Warnf("websocket read pump panic: %v", r)
+		}
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
@@ -75,6 +78,9 @@ func (c *Client) ReadPump() {
 func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		if r := recover(); r != nil {
+			c.hub.log.Warnf("websocket write pump panic: %v", r)
+		}
 		ticker.Stop()
 		c.conn.Close()
 	}()

@@ -4,8 +4,6 @@ import (
 	"slido-clone-backend/internal/delivery/http"
 	"slido-clone-backend/internal/delivery/websocket"
 
-	wsfiber "github.com/gofiber/contrib/websocket"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -28,15 +26,6 @@ func (c *RouteConfig) Setup() {
 
 // SetupWebSocketRoute setup upgrade Websocket connection
 func (c *RouteConfig) SetupWebSocketRoute() {
-	c.App.Use("/ws", func(c *fiber.Ctx) error {
-		// Upgrade WebSoceket Connection
-		if wsfiber.IsWebSocketUpgrade(c) {
-			c.Locals("allowed", true)
-			return c.Next()
-		}
-		return fiber.ErrUnauthorized
-	})
-
 	// websocket section route
 	c.App.Get("/ws", c.WSHandler.HandleWebSocket)
 }
