@@ -1,23 +1,12 @@
 package websocket
 
 import (
-	"net/http"
 	"slido-clone-backend/internal/util"
 
-	"github.com/gofiber/adaptor/v2"
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		// for development
-		return true
-	},
-}
 
 type WebSocketHandler struct {
 	hub          *Hub
@@ -57,17 +46,22 @@ func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
-	// upgrade http connection to websocket
-	return adaptor.HTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			wsh.log.Error("upgrade failed: ", err)
-			return
-		}
+	// upgrade to websocket
+	// call two functions: first is to create the websocket connection handler,
+	// second is the actual handler returned by websocket.New()
+	return websocket.New(func(c *websocket.Conn) {
+		wsh.log.Debug("upgraded to websocket connection")
 
+		defer func() {
+			if r := recover(); r != nil {
+				wsh.log.Warnf("websocket connection handler panic: %v", r)
+			}
+		}()
+
+		// create new client
 		client := &Client{
 			hub:            wsh.hub,
-			conn:           conn,
+			conn:           c,
 			send:           make(chan []byte, 256),
 			userID:         getUintValue(claims.UserID),
 			roomID:         getUintValue(claims.RoomID),
@@ -76,11 +70,15 @@ func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
 			messageHandler: wsh.eventHandler.HandleMessage,
 		}
 
-		wsh.hub.register <- client
+		// register client ke hub
+		client.hub.register <- client
 
+		// run write pump sebagai goroutine
 		go client.WritePump()
-		go client.ReadPump()
-	}))(ctx)
+
+		// run read pump di goroutine utama agar koneksi tetap terbuka
+		client.ReadPump()
+	})(ctx)
 }
 
 func getUintValue(ptr *uint) uint {

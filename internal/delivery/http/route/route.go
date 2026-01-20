@@ -19,8 +19,15 @@ type RouteConfig struct {
 
 // Setup running all route setup here
 func (c *RouteConfig) Setup() {
+	c.SetupWebSocketRoute()
 	c.SetupGuestRoute()
 	c.SetupAuthRoute()
+}
+
+// SetupWebSocketRoute setup upgrade Websocket connection
+func (c *RouteConfig) SetupWebSocketRoute() {
+	// websocket section route
+	c.App.Get("/ws", c.WSHandler.HandleWebSocket)
 }
 
 // SetupGuestRoute tambahkan route yang bisa diakses tanpa autentikasi
@@ -30,9 +37,6 @@ func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Post("/api/v1/users/anonymous", c.UserController.Anon)
 
 	c.App.Get("/api/v1/rooms/:room_code", c.RoomController.Get)
-
-	// websocket section route
-	c.App.Get("/ws", c.WSHandler.HandleWebSocket)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {

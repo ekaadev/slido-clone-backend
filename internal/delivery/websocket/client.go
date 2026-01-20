@@ -3,7 +3,7 @@ package websocket
 import (
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/gofiber/contrib/websocket"
 )
 
 const (
@@ -20,9 +20,10 @@ const (
 	maxMessage = 512 * 1024
 )
 
+// Client representasi koneksi websocket ke client
 type Client struct {
 	hub  *Hub            // hub websocket
-	conn *websocket.Conn // koneksi websocket gorilla/websocket
+	conn *websocket.Conn // koneksi websocket
 	send chan []byte     // channel untuk mengirim pesan ke client
 
 	// identitas client
@@ -38,6 +39,9 @@ type Client struct {
 // ReadPump goroutine untuk membaca pesan dari client
 func (c *Client) ReadPump() {
 	defer func() {
+		if r := recover(); r != nil {
+			c.hub.log.Warnf("websocket read pump panic: %v", r)
+		}
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
@@ -61,8 +65,6 @@ func (c *Client) ReadPump() {
 
 		// untuk kebutuhan testing kita echo kembali pesan yang diterima
 		c.hub.log.WithField("message", msg).Debug("WebSocket message received")
-		//c.send <- msg
-		//c.hub.BroadcastToRoom(c.roomID, msg) // broadcast ke semua client di room yang sama
 
 		if c.messageHandler != nil {
 			if err = c.messageHandler(c, msg); err != nil {
@@ -76,6 +78,9 @@ func (c *Client) ReadPump() {
 func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
+		if r := recover(); r != nil {
+			c.hub.log.Warnf("websocket write pump panic: %v", r)
+		}
 		ticker.Stop()
 		c.conn.Close()
 	}()
