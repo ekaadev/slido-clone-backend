@@ -4,6 +4,8 @@ import (
 	"slido-clone-backend/internal/delivery/http"
 	"slido-clone-backend/internal/delivery/websocket"
 
+	wsfiber "github.com/gofiber/contrib/websocket"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,8 +21,21 @@ type RouteConfig struct {
 
 // Setup running all route setup here
 func (c *RouteConfig) Setup() {
+	c.SetupUpgradeWebSocket()
 	c.SetupGuestRoute()
 	c.SetupAuthRoute()
+}
+
+// SetupUpgradeWebSocket Setup upgrade Websocket connection
+func (c *RouteConfig) SetupUpgradeWebSocket() {
+	c.App.Use("/ws", func(c *fiber.Ctx) error {
+		// Upgrade WebSoceket Connection
+		if wsfiber.IsWebSocketUpgrade(c) {
+			c.Locals("allowed", true)
+			return c.Next()
+		}
+		return fiber.ErrUnauthorized
+	})
 }
 
 // SetupGuestRoute tambahkan route yang bisa diakses tanpa autentikasi
