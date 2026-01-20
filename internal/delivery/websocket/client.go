@@ -3,7 +3,7 @@ package websocket
 import (
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/gofiber/contrib/websocket"
 )
 
 const (
@@ -20,6 +20,7 @@ const (
 	maxMessage = 512 * 1024
 )
 
+// Client representasi koneksi websocket ke client
 type Client struct {
 	hub  *Hub            // hub websocket
 	conn *websocket.Conn // koneksi websocket gorilla/websocket
@@ -61,8 +62,6 @@ func (c *Client) ReadPump() {
 
 		// untuk kebutuhan testing kita echo kembali pesan yang diterima
 		c.hub.log.WithField("message", msg).Debug("WebSocket message received")
-		//c.send <- msg
-		//c.hub.BroadcastToRoom(c.roomID, msg) // broadcast ke semua client di room yang sama
 
 		if c.messageHandler != nil {
 			if err = c.messageHandler(c, msg); err != nil {

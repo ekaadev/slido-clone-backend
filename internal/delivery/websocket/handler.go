@@ -1,23 +1,13 @@
 package websocket
 
 import (
-	"net/http"
+	"slido-clone-backend/internal/model"
 	"slido-clone-backend/internal/util"
 
-	"github.com/gofiber/adaptor/v2"
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		// for development
-		return true
-	},
-}
 
 type WebSocketHandler struct {
 	hub          *Hub
@@ -57,17 +47,23 @@ func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
-	// upgrade http connection to websocket
-	return adaptor.HTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			wsh.log.Error("upgrade failed: ", err)
-			return
-		}
+	// save claims to locals for access in websocket handler
+	ctx.Locals("claims", claims)
+
+	// upgrade to websocket
+	// call two functions: first is to create the websocket connection handler,
+	// second is the actual handler returned by websocket.New()
+	return websocket.New(wsh.createConnectionHandler())(ctx)
+}
+
+func (wsh *WebSocketHandler) createConnectionHandler() func(c *websocket.Conn) {
+	return func(c *websocket.Conn) {
+		// get claims from locals
+		claims := c.Locals("claims").(*model.Auth)
 
 		client := &Client{
 			hub:            wsh.hub,
-			conn:           conn,
+			conn:           c,
 			send:           make(chan []byte, 256),
 			userID:         getUintValue(claims.UserID),
 			roomID:         getUintValue(claims.RoomID),
@@ -76,11 +72,13 @@ func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
 			messageHandler: wsh.eventHandler.HandleMessage,
 		}
 
-		wsh.hub.register <- client
+		// register client ke hub
+		client.hub.register <- client
 
+		// run goroutine untuk baca dan tulis
 		go client.WritePump()
 		go client.ReadPump()
-	}))(ctx)
+	}
 }
 
 func getUintValue(ptr *uint) uint {

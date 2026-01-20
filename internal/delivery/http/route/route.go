@@ -21,13 +21,13 @@ type RouteConfig struct {
 
 // Setup running all route setup here
 func (c *RouteConfig) Setup() {
-	c.SetupUpgradeWebSocket()
+	c.SetupWebSocketRoute()
 	c.SetupGuestRoute()
 	c.SetupAuthRoute()
 }
 
-// SetupUpgradeWebSocket Setup upgrade Websocket connection
-func (c *RouteConfig) SetupUpgradeWebSocket() {
+// SetupWebSocketRoute setup upgrade Websocket connection
+func (c *RouteConfig) SetupWebSocketRoute() {
 	c.App.Use("/ws", func(c *fiber.Ctx) error {
 		// Upgrade WebSoceket Connection
 		if wsfiber.IsWebSocketUpgrade(c) {
@@ -36,6 +36,9 @@ func (c *RouteConfig) SetupUpgradeWebSocket() {
 		}
 		return fiber.ErrUnauthorized
 	})
+
+	// websocket section route
+	c.App.Get("/ws", c.WSHandler.HandleWebSocket)
 }
 
 // SetupGuestRoute tambahkan route yang bisa diakses tanpa autentikasi
@@ -45,9 +48,6 @@ func (c *RouteConfig) SetupGuestRoute() {
 	c.App.Post("/api/v1/users/anonymous", c.UserController.Anon)
 
 	c.App.Get("/api/v1/rooms/:room_code", c.RoomController.Get)
-
-	// websocket section route
-	c.App.Get("/ws", c.WSHandler.HandleWebSocket)
 }
 
 func (c *RouteConfig) SetupAuthRoute() {
