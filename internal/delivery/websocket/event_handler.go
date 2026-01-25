@@ -7,6 +7,7 @@ import (
 	"slido-clone-backend/internal/model"
 	"slido-clone-backend/internal/sfu"
 	"slido-clone-backend/internal/usecase"
+	"time"
 
 	"github.com/pion/webrtc/v4"
 )
@@ -57,6 +58,23 @@ func (h *EventHandler) HandleMessage(client *Client, data []byte) error {
 		return h.handleWebrtcAnswer(client, wsMsg.Data)
 	case EventWebrtcCandidate:
 		return h.handleWebrtcCandidate(client, wsMsg.Data)
+	// Conference events
+	case EventConferenceStart:
+		return h.handleConferenceStart(client)
+	case EventConferenceStop:
+		return h.handleConferenceStop(client)
+	case EventConferenceJoin:
+		return h.handleConferenceJoin(client)
+	case EventConferenceLeave:
+		return h.handleConferenceLeave(client)
+	case EventRaiseHand:
+		return h.handleRaiseHand(client)
+	case EventLowerHand:
+		return h.handleLowerHand(client)
+	case EventPromoteSpeaker:
+		return h.handlePromoteSpeaker(client, wsMsg.Data)
+	case EventDemoteSpeaker:
+		return h.handleDemoteSpeaker(client, wsMsg.Data)
 	default:
 		client.hub.log.WithField("event", wsMsg.Event).Warn("unknown event")
 		return nil
@@ -280,11 +298,23 @@ func (h *EventHandler) HandleDisconnect(client *Client) {
 }
 
 func (h *EventHandler) handleWebrtcOffer(client *Client, data json.RawMessage) error {
-	var offer webrtc.SessionDescription
-	if err := json.Unmarshal(data, &offer); err != nil {
+	var offerPayload struct {
+		Type        string `json:"type"`
+		SDP         string `json:"sdp"`
+		Renegotiate bool   `json:"renegotiate"`
+		Reason      string `json:"reason"`
+	}
+	if err := json.Unmarshal(data, &offerPayload); err != nil {
 		client.hub.log.WithField("error", err).Warn("failed to parse webrtc offer")
 		return err
 	}
+
+	offer := webrtc.SessionDescription{
+		Type: webrtc.SDPTypeOffer,
+		SDP:  offerPayload.SDP,
+	}
+
+	peerID := fmt.Sprintf("%d", client.participantID)
 
 	signalFunc := func(payload interface{}) {
 		// Prevent panic if channel is closed
@@ -319,8 +349,21 @@ func (h *EventHandler) handleWebrtcOffer(client *Client, data json.RawMessage) e
 		client.send <- mustMarshal(msg)
 	}
 
-	// Always create peer on offer (new session)
-	peerID := fmt.Sprintf("%d", client.participantID)
+	room := h.sfuManager.GetRoom(client.roomID)
+	existingPeer := room.GetPeer(peerID)
+
+	// Check if this is a renegotiation (peer already exists)
+	if existingPeer != nil && offerPayload.Renegotiate {
+		client.hub.log.WithFields(map[string]interface{}{
+			"participant_id": peerID,
+			"reason":         offerPayload.Reason,
+		}).Info("Handling renegotiation offer")
+
+		// Handle renegotiation - just process the new offer without recreating peer
+		return existingPeer.HandleOffer(offer)
+	}
+
+	// Create new peer if doesn't exist
 	peer, err := h.sfuManager.CreatePeer(client.roomID, peerID, signalFunc)
 	if err != nil {
 		client.hub.log.WithField("error", err).Warn("failed to create peer")
@@ -357,4 +400,175 @@ func mustMarshal(v interface{}) []byte {
 		panic(err)
 	}
 	return data
+}
+
+// Conference Handlers
+
+func (h *EventHandler) handleConferenceStart(client *Client) error {
+	peerID := fmt.Sprintf("%d", client.participantID)
+	room := h.sfuManager.GetRoom(client.roomID)
+
+	if err := room.StartConference(peerID); err != nil {
+		return err
+	}
+
+	// Broadcast conference started to all clients in room
+	state := room.GetConferenceState()
+	broadcastData := WSMessage{
+		Event: EventConferenceStarted,
+		Data: mustMarshal(map[string]interface{}{
+			"host_id":      state.HostID,
+			"is_active":    state.IsActive,
+			"speakers":     state.Speakers,
+			"raised_hands": state.RaisedHands,
+		}),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	return nil
+}
+
+func (h *EventHandler) handleConferenceStop(client *Client) error {
+	peerID := fmt.Sprintf("%d", client.participantID)
+	room := h.sfuManager.GetRoom(client.roomID)
+
+	if err := room.StopConference(peerID); err != nil {
+		return err
+	}
+
+	// Broadcast conference ended to all clients in room
+	broadcastData := WSMessage{
+		Event: EventConferenceEnded,
+		Data:  mustMarshal(map[string]interface{}{}),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	return nil
+}
+
+func (h *EventHandler) handleConferenceJoin(client *Client) error {
+	peerID := fmt.Sprintf("%d", client.participantID)
+	room := h.sfuManager.GetRoom(client.roomID)
+
+	// Send current state to the joining client
+	state := room.GetConferenceState()
+	stateData := WSMessage{
+		Event: EventConferenceState,
+		Data: mustMarshal(map[string]interface{}{
+			"host_id":      state.HostID,
+			"is_active":    state.IsActive,
+			"speakers":     state.Speakers,
+			"raised_hands": state.RaisedHands,
+		}),
+	}
+	client.send <- mustMarshal(stateData)
+
+	// Broadcast that someone joined
+	broadcastData := WSMessage{
+		Event: EventConferenceJoined,
+		Data: mustMarshal(map[string]interface{}{
+			"participant_id": peerID,
+		}),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	return nil
+}
+
+func (h *EventHandler) handleConferenceLeave(client *Client) error {
+	peerID := fmt.Sprintf("%d", client.participantID)
+
+	// Broadcast that someone left
+	broadcastData := WSMessage{
+		Event: EventConferenceLeft,
+		Data: mustMarshal(map[string]interface{}{
+			"participant_id": peerID,
+		}),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	return nil
+}
+
+func (h *EventHandler) handleRaiseHand(client *Client) error {
+	peerID := fmt.Sprintf("%d", client.participantID)
+	room := h.sfuManager.GetRoom(client.roomID)
+
+	room.RaiseHand(peerID, time.Now().Unix())
+
+	// Broadcast hand raised
+	broadcastData := WSMessage{
+		Event: EventHandRaised,
+		Data: mustMarshal(map[string]interface{}{
+			"participant_id": peerID,
+			"timestamp":      time.Now().Unix(),
+		}),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	return nil
+}
+
+func (h *EventHandler) handleLowerHand(client *Client) error {
+	peerID := fmt.Sprintf("%d", client.participantID)
+	room := h.sfuManager.GetRoom(client.roomID)
+
+	room.LowerHand(peerID)
+
+	// Broadcast hand lowered
+	broadcastData := WSMessage{
+		Event: EventHandLowered,
+		Data: mustMarshal(map[string]interface{}{
+			"participant_id": peerID,
+		}),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	return nil
+}
+
+func (h *EventHandler) handlePromoteSpeaker(client *Client, data json.RawMessage) error {
+	var payload struct {
+		ParticipantID string `json:"participant_id"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+
+	hostID := fmt.Sprintf("%d", client.participantID)
+	room := h.sfuManager.GetRoom(client.roomID)
+
+	if !room.PromoteSpeaker(hostID, payload.ParticipantID) {
+		return fmt.Errorf("not authorized to promote")
+	}
+
+	// Broadcast speaker promoted
+	broadcastData := WSMessage{
+		Event: EventSpeakerPromoted,
+		Data: mustMarshal(map[string]interface{}{
+			"participant_id": payload.ParticipantID,
+		}),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	return nil
+}
+
+func (h *EventHandler) handleDemoteSpeaker(client *Client, data json.RawMessage) error {
+	var payload struct {
+		ParticipantID string `json:"participant_id"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return err
+	}
+
+	hostID := fmt.Sprintf("%d", client.participantID)
+	room := h.sfuManager.GetRoom(client.roomID)
+
+	if !room.DemoteSpeaker(hostID, payload.ParticipantID) {
+		return fmt.Errorf("not authorized to demote")
+	}
+
+	// Broadcast speaker demoted
+	broadcastData := WSMessage{
+		Event: EventSpeakerDemoted,
+		Data: mustMarshal(map[string]interface{}{
+			"participant_id": payload.ParticipantID,
+		}),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	return nil
 }

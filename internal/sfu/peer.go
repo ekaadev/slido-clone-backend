@@ -129,6 +129,7 @@ func (p *Peer) AddTrack(track webrtc.TrackLocal) error {
 }
 
 // Negotiate creates an offer and sends it to the other peer (client)
+// This is used for renegotiation when new tracks are added
 func (p *Peer) Negotiate() error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -142,9 +143,12 @@ func (p *Peer) Negotiate() error {
 		return err
 	}
 
+	// Include renegotiate flag so client knows this is a renegotiation
 	payload := map[string]interface{}{
-		"type": offer.Type.String(),
-		"sdp":  offer.SDP,
+		"type":        offer.Type.String(),
+		"sdp":         offer.SDP,
+		"renegotiate": true,
+		"reason":      "new_track",
 	}
 	p.signalFunc(payload)
 	return nil
