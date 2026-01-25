@@ -3,21 +3,27 @@ package websocket
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"slido-clone-backend/internal/model"
+	"slido-clone-backend/internal/sfu"
 	"slido-clone-backend/internal/usecase"
+
+	"github.com/pion/webrtc/v4"
 )
 
 type EventHandler struct {
 	messageUseCase     *usecase.MessageUseCase
 	participantUseCase *usecase.ParticipantUseCase
 	questionUseCase    *usecase.QuestionUseCase
+	sfuManager         *sfu.SFUManager
 }
 
-func NewEventHandler(messageUseCase *usecase.MessageUseCase, participantUseCase *usecase.ParticipantUseCase, questionUseCase *usecase.QuestionUseCase) *EventHandler {
+func NewEventHandler(messageUseCase *usecase.MessageUseCase, participantUseCase *usecase.ParticipantUseCase, questionUseCase *usecase.QuestionUseCase, sfuManager *sfu.SFUManager) *EventHandler {
 	return &EventHandler{
 		messageUseCase:     messageUseCase,
 		participantUseCase: participantUseCase,
 		questionUseCase:    questionUseCase,
+		sfuManager:         sfuManager,
 	}
 }
 
@@ -44,6 +50,13 @@ func (h *EventHandler) HandleMessage(client *Client, data []byte) error {
 		return h.handleQuestionUpvote(client, wsMsg.Data)
 	case EventQuestionRemoveUpvote:
 		return h.handleQuestionRemoveUpvote(client, wsMsg.Data)
+	// WebRTC
+	case EventWebrtcOffer:
+		return h.handleWebrtcOffer(client, wsMsg.Data)
+	case EventWebrtcAnswer:
+		return h.handleWebrtcAnswer(client, wsMsg.Data)
+	case EventWebrtcCandidate:
+		return h.handleWebrtcCandidate(client, wsMsg.Data)
 	default:
 		client.hub.log.WithField("event", wsMsg.Event).Warn("unknown event")
 		return nil
@@ -257,6 +270,84 @@ func (h *EventHandler) broadcastLeaderboardUpdate(client *Client) {
 	}
 
 	client.hub.BroadcastToRoom(client.roomID, mustMarshal(leaderboardData))
+}
+
+func (h *EventHandler) HandleDisconnect(client *Client) {
+	peerID := fmt.Sprintf("%d", client.participantID)
+	// We use the sfuManager directly.
+	// Make sure RemovePeer is safe to call even if peer doesn't exist.
+	h.sfuManager.RemovePeer(client.roomID, peerID)
+}
+
+func (h *EventHandler) handleWebrtcOffer(client *Client, data json.RawMessage) error {
+	var offer webrtc.SessionDescription
+	if err := json.Unmarshal(data, &offer); err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to parse webrtc offer")
+		return err
+	}
+
+	signalFunc := func(payload interface{}) {
+		// Prevent panic if channel is closed
+		defer func() {
+			if r := recover(); r != nil {
+				client.hub.log.Warnf("failed to send signal: %v", r)
+			}
+		}()
+
+		pl, ok := payload.(map[string]interface{})
+		if !ok {
+			return
+		}
+		typ, _ := pl["type"].(string)
+
+		var event string
+		switch typ {
+		case "offer":
+			event = EventWebrtcOffer
+		case "answer":
+			event = EventWebrtcAnswer
+		case "candidate":
+			event = EventWebrtcCandidate
+		default:
+			event = "webrtc:signal"
+		}
+
+		msg := WSMessage{
+			Event: event,
+			Data:  mustMarshal(payload),
+		}
+		client.send <- mustMarshal(msg)
+	}
+
+	// Always create peer on offer (new session)
+	peerID := fmt.Sprintf("%d", client.participantID)
+	peer, err := h.sfuManager.CreatePeer(client.roomID, peerID, signalFunc)
+	if err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to create peer")
+		return err
+	}
+
+	return peer.HandleOffer(offer)
+}
+
+func (h *EventHandler) handleWebrtcAnswer(client *Client, data json.RawMessage) error {
+	var answer webrtc.SessionDescription
+	if err := json.Unmarshal(data, &answer); err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to parse webrtc answer")
+		return err
+	}
+	peerID := fmt.Sprintf("%d", client.participantID)
+	return h.sfuManager.HandleAnswer(client.roomID, peerID, answer)
+}
+
+func (h *EventHandler) handleWebrtcCandidate(client *Client, data json.RawMessage) error {
+	var candidate webrtc.ICECandidateInit
+	if err := json.Unmarshal(data, &candidate); err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to parse webrtc candidate")
+		return err
+	}
+	peerID := fmt.Sprintf("%d", client.participantID)
+	return h.sfuManager.HandleCandidate(client.roomID, peerID, candidate)
 }
 
 // mustMarshal helper untuk marshal JSON, panic jika error

@@ -78,6 +78,9 @@ func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
 
 		// run read pump di goroutine utama agar koneksi tetap terbuka
 		client.ReadPump()
+
+		// cleanup after disconnect
+		wsh.eventHandler.HandleDisconnect(client)
 	})(ctx)
 }
 

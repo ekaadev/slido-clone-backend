@@ -37,4 +37,9 @@ const (
 	EventLeaderboardUpdate  = "leaderboard:updated" // Server -> Client
 	EventXPAwarded          = "xp:awarded"
 	EventLeaderboardRequest = "leaderboard:request" // Client -> Server
+
+	// WebRTC events
+	EventWebrtcOffer     = "webrtc:offer"     // Client -> Server
+	EventWebrtcAnswer    = "webrtc:answer"    // Server -> Client
+	EventWebrtcCandidate = "webrtc:candidate" // Bidirectional
 )

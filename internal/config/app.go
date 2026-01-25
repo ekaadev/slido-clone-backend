@@ -6,6 +6,7 @@ import (
 	"slido-clone-backend/internal/delivery/http/route"
 	"slido-clone-backend/internal/delivery/websocket"
 	"slido-clone-backend/internal/repository"
+	"slido-clone-backend/internal/sfu"
 	"slido-clone-backend/internal/usecase"
 	"slido-clone-backend/internal/util"
 
@@ -63,7 +64,8 @@ func Bootstrap(config *BootstrapConfig) {
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
 
 	// websocket handler
-	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase, questionUseCase)
+	sfuManager := sfu.NewSFUManager(config.Log)
+	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase, questionUseCase, sfuManager)
 	wsHandler := websocket.NewWebSocketHandler(hub, config.Log, tokenUtil, eventHandler)
 
 	// setup HTTP routes
