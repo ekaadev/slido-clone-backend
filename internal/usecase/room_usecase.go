@@ -95,7 +95,7 @@ func (c *RoomUseCase) Create(ctx context.Context, request *model.CreateRoomReque
 }
 
 // Get usecase untuk mendapatkan detail room berdasarkan room code
-func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequestByRoomCode) (*model.GetRoomDetailResponse, error) {
+func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequestByRoomCode) (*model.RoomDetailResponse, error) {
 	// begin transaction
 	tx := c.DB.WithContext(ctx).Begin()
 	defer tx.Rollback()
@@ -126,13 +126,13 @@ func (c *RoomUseCase) Get(ctx context.Context, request *model.GetRoomRequestByRo
 	}
 
 	// return room detail response
-	return converter.RoomToGetRoomDetailResponse(existingRoom), nil
+	return converter.RoomToDetailResponse(existingRoom), nil
 }
 
 // UpdateToClosed usecase untuk mengupdate room berdasarkan id
 // hanya bisa diubah statusnya menjadi closed
 // TODO: berpotensi untuk digunakan dalam websocket "on close room"
-func (c *RoomUseCase) UpdateToClosed(ctx context.Context, request *model.UpdateToCloseRoomRequestByID) (*model.UpdateToCloseRoomResponse, error) {
+func (c *RoomUseCase) UpdateToClosed(ctx context.Context, request *model.UpdateToCloseRoomRequestByID) (*model.UpdateToCloseRoom, error) {
 	// begin transaction
 	tx := c.DB.WithContext(ctx).Begin()
 	defer tx.Rollback()
@@ -173,7 +173,7 @@ func (c *RoomUseCase) UpdateToClosed(ctx context.Context, request *model.UpdateT
 		return nil, fiber.ErrInternalServerError
 	}
 
-	return converter.UpdateToCloseRoomToResponse(room), nil
+	return converter.RoomToUpdateToCloseResponse(room), nil
 }
 
 // Search usecase untuk mencari room yang dimiliki oleh presenter

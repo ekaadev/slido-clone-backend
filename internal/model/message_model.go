@@ -16,10 +16,6 @@ type MessageResponse struct {
 	CreatedAt   time.Time       `json:"created_at"`
 }
 
-type SendMessageResponse struct {
-	Message MessageResponse `json:"message"`
-}
-
 type GetMessagesRequest struct {
 	RoomID        uint   `json:"-" validate:"required,min=1"`
 	ParticipantID uint   `json:"-" validate:"required,min=1"`
@@ -30,9 +26,4 @@ type GetMessagesRequest struct {
 type MessageListResponse struct {
 	Messages []MessageResponse `json:"messages"`
 	HasMore  bool              `json:"has_more"`
-}
-
-type MessageParticipantInfo struct {
-	ID          uint   `json:"id"`
-	DisplayName string `json:"display_name"`
 }
