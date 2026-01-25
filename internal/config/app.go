@@ -34,6 +34,8 @@ func Bootstrap(config *BootstrapConfig) {
 	participantRepository := repository.NewParticipantRepository(config.Log)
 	messageRepository := repository.NewMessageRepository(config.Log)
 	xpTransactionRepository := repository.NewXPTransactionRepository(config.Log)
+	questionRepository := repository.NewQuestionRepository(config.Log)
+	voteRepository := repository.NewVoteRepository(config.Log)
 
 	// setup utils
 	tokenUtil := util.NewTokenUtil(config.Config.GetString("JWT_SECRET"), config.Redis)
@@ -44,22 +46,24 @@ func Bootstrap(config *BootstrapConfig) {
 	participantUseCase := usecase.NewParticipantUseCase(config.DB, config.Log, config.Validator, participantRepository, roomRepository, userRepository, tokenUtil)
 	xpTransactionUseCase := usecase.NewXPTransactionUseCase(config.DB, config.Validator, config.Log, xpTransactionRepository)
 	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository, xpTransactionUseCase)
+	questionUseCase := usecase.NewQuestionUseCase(config.DB, config.Log, config.Validator, questionRepository, voteRepository, roomRepository, participantRepository, xpTransactionRepository)
+
+	// configuration websocket hub (sebelum controller yang membutuhkan hub)
+	hub := websocket.NewHub(config.Log)
+	go hub.Run() // start hub run goroutine
 
 	// setup HTTP controllers
 	userController := http.NewUserController(config.Log, userUseCase)
 	roomController := http.NewRoomController(config.Log, roomUseCase, tokenUtil)
 	participantController := http.NewParticipantController(config.Log, participantUseCase)
 	messageController := http.NewMessageController(config.Log, messageUseCase)
+	questionController := http.NewQuestionController(config.Log, questionUseCase, hub)
 
 	// setup HTTP middleware
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
 
-	// configuration websocket
-	hub := websocket.NewHub(config.Log)
-	go hub.Run() // start hub run goroutine
-
 	// websocket handler
-	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase)
+	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase, questionUseCase)
 	wsHandler := websocket.NewWebSocketHandler(hub, config.Log, tokenUtil, eventHandler)
 
 	// setup HTTP routes
@@ -69,6 +73,7 @@ func Bootstrap(config *BootstrapConfig) {
 		RoomController:        roomController,
 		ParticipantController: participantController,
 		MessageController:     messageController,
+		QuestionController:    questionController,
 		AuthMiddleware:        authMiddleware,
 		WSHandler:             wsHandler,
 	}

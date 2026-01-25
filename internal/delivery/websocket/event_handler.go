@@ -10,12 +10,14 @@ import (
 type EventHandler struct {
 	messageUseCase     *usecase.MessageUseCase
 	participantUseCase *usecase.ParticipantUseCase
+	questionUseCase    *usecase.QuestionUseCase
 }
 
-func NewEventHandler(messageUseCase *usecase.MessageUseCase, participantUseCase *usecase.ParticipantUseCase) *EventHandler {
+func NewEventHandler(messageUseCase *usecase.MessageUseCase, participantUseCase *usecase.ParticipantUseCase, questionUseCase *usecase.QuestionUseCase) *EventHandler {
 	return &EventHandler{
 		messageUseCase:     messageUseCase,
 		participantUseCase: participantUseCase,
+		questionUseCase:    questionUseCase,
 	}
 }
 
@@ -35,6 +37,13 @@ func (h *EventHandler) HandleMessage(client *Client, data []byte) error {
 		return h.handleChatTyping(client, wsMsg.Data)
 	case EventLeaderboardRequest:
 		return h.handleLeaderboardRequest(client, wsMsg.Data)
+	// Q&A events
+	case EventQuestionSubmit:
+		return h.handleQuestionSubmit(client, wsMsg.Data)
+	case EventQuestionUpvote:
+		return h.handleQuestionUpvote(client, wsMsg.Data)
+	case EventQuestionRemoveUpvote:
+		return h.handleQuestionRemoveUpvote(client, wsMsg.Data)
 	default:
 		client.hub.log.WithField("event", wsMsg.Event).Warn("unknown event")
 		return nil
@@ -119,6 +128,111 @@ func (h *EventHandler) handleLeaderboardRequest(client *Client, data json.RawMes
 	}
 
 	client.send <- mustMarshal(responseData)
+	return nil
+}
+
+// handleQuestionSubmit handle submit question via websocket
+func (h *EventHandler) handleQuestionSubmit(client *Client, data json.RawMessage) error {
+	// parse payload
+	var payload struct {
+		Content string `json:"content"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to parse question payload")
+		return err
+	}
+
+	// create request untuk usecase
+	request := &model.SubmitQuestionRequest{
+		RoomID:        client.roomID,
+		ParticipantID: client.participantID,
+		Content:       payload.Content,
+	}
+
+	// call usecase
+	response, err := h.questionUseCase.Submit(context.Background(), request)
+	if err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to submit question")
+		return err
+	}
+
+	// broadcast question:created ke semua client di room
+	broadcastData := WSMessage{
+		Event: EventQuestionCreated,
+		Data:  mustMarshal(response),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	h.broadcastLeaderboardUpdate(client)
+	return nil
+}
+
+// handleQuestionUpvote handle upvote question via websocket
+func (h *EventHandler) handleQuestionUpvote(client *Client, data json.RawMessage) error {
+	// parse payload
+	var payload struct {
+		QuestionID uint `json:"question_id"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to parse upvote payload")
+		return err
+	}
+
+	// create request untuk usecase
+	request := &model.UpvoteRequest{
+		QuestionID:    payload.QuestionID,
+		ParticipantID: client.participantID,
+		RoomID:        client.roomID,
+	}
+
+	// call usecase
+	response, err := h.questionUseCase.Upvote(context.Background(), request)
+	if err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to upvote question")
+		return err
+	}
+
+	// broadcast question:upvoted ke semua client di room
+	broadcastData := WSMessage{
+		Event: EventQuestionUpvoted,
+		Data:  mustMarshal(response),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	h.broadcastLeaderboardUpdate(client)
+	return nil
+}
+
+// handleQuestionRemoveUpvote handle remove upvote via websocket
+func (h *EventHandler) handleQuestionRemoveUpvote(client *Client, data json.RawMessage) error {
+	// parse payload
+	var payload struct {
+		QuestionID uint `json:"question_id"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to parse remove upvote payload")
+		return err
+	}
+
+	// create request untuk usecase
+	request := &model.UpvoteRequest{
+		QuestionID:    payload.QuestionID,
+		ParticipantID: client.participantID,
+		RoomID:        client.roomID,
+	}
+
+	// call usecase
+	response, err := h.questionUseCase.RemoveUpvote(context.Background(), request)
+	if err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to remove upvote")
+		return err
+	}
+
+	// broadcast question:upvoted (dengan updated count) ke semua client di room
+	broadcastData := WSMessage{
+		Event: EventQuestionUpvoted,
+		Data:  mustMarshal(response),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	h.broadcastLeaderboardUpdate(client)
 	return nil
 }
 

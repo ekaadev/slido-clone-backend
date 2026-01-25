@@ -13,6 +13,7 @@ type RouteConfig struct {
 	RoomController        *http.RoomController
 	ParticipantController *http.ParticipantController
 	MessageController     *http.MessageController
+	QuestionController    *http.QuestionController
 	AuthMiddleware        fiber.Handler
 	WSHandler             *websocket.WebSocketHandler
 }
@@ -52,4 +53,11 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Get("/api/v1/rooms/:room_id/messages", c.MessageController.List)
 
 	c.App.Get("/api/v1/rooms/:room_id/leaderboard", c.ParticipantController.Leaderboard)
+
+	// Q&A routes
+	c.App.Post("/api/v1/rooms/:room_id/questions", c.QuestionController.Submit)
+	c.App.Get("/api/v1/rooms/:room_id/questions", c.QuestionController.List)
+	c.App.Post("/api/v1/questions/:question_id/upvote", c.QuestionController.Upvote)
+	c.App.Delete("/api/v1/questions/:question_id/upvote", c.QuestionController.RemoveUpvote)
+	c.App.Patch("/api/v1/questions/:question_id/validate", c.QuestionController.Validate)
 }

@@ -21,9 +21,12 @@ const (
 	EventChatTyping  = "chat:typing"  // Bidirectional
 
 	// Question events
-	EventQuestionCreated   = "question:created"
-	EventQuestionUpvoted   = "question:upvoted"
-	EventQuestionValidated = "question:validated"
+	EventQuestionSubmit       = "question:submit"        // Client -> Server
+	EventQuestionUpvote       = "question:upvote"        // Client -> Server
+	EventQuestionRemoveUpvote = "question:remove_upvote" // Client -> Server
+	EventQuestionCreated      = "question:created"       // Server -> Client (broadcast)
+	EventQuestionUpvoted      = "question:upvoted"       // Server -> Client (broadcast)
+	EventQuestionValidated    = "question:validated"     // Server -> Client (broadcast)
 
 	// Poll events
 	EventPollCreated       = "poll:created"
