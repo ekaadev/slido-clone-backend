@@ -171,7 +171,7 @@ func (c *UserUseCase) Login(ctx context.Context, request *model.LoginUserRequest
 
 // Anon usecase untuk membuat user anonymous
 // dapat membuat user anonymous ketika room code valid
-func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequest) (*model.AnonymousAuthResponse, error) {
+func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequest) (*model.JoinRoomResponse, error) {
 	// begin transaction
 	tx := c.DB.WithContext(ctx).Begin()
 	defer tx.Rollback()
@@ -205,7 +205,7 @@ func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequ
 	// create participant entity
 	participant := &entity.Participant{
 		RoomID:      roomExisting.ID,
-		DisplayName: "Anonymous",
+		DisplayName: request.DisplayName,
 		IsAnonymous: &anon,
 	}
 
@@ -229,6 +229,6 @@ func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequ
 		IsAnonymous:   *participant.IsAnonymous,
 	})
 
-	// return and convert to anonymous user response
-	return converter.ParticipantAnonymousAuthResponse(participant, token), nil
+	// return and convert to join room response
+	return converter.ParticipantToJoinRoomResponse(participant, token), nil
 }

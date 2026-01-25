@@ -5,6 +5,7 @@ import (
 	"slido-clone-backend/internal/model"
 )
 
+// UserToResponse convert entity User to model UserResponse
 func UserToResponse(user *entity.User) *model.UserResponse {
 	return &model.UserResponse{
 		ID:        user.ID,
@@ -15,16 +16,10 @@ func UserToResponse(user *entity.User) *model.UserResponse {
 	}
 }
 
+// UserToAuthResponse convert entity User and token to model AuthResponse
 func UserToAuthResponse(user *entity.User, token string) *model.AuthResponse {
 	return &model.AuthResponse{
 		User:  *UserToResponse(user),
 		Token: token,
-	}
-}
-
-func ParticipantAnonymousAuthResponse(participant *entity.Participant, token string) *model.AnonymousAuthResponse {
-	return &model.AnonymousAuthResponse{
-		Participant: *ParticipantToResponse(participant),
-		Token:       token,
 	}
 }

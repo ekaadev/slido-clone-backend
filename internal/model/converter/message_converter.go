@@ -5,6 +5,7 @@ import (
 	"slido-clone-backend/internal/model"
 )
 
+// MessageToResponse convert entity Message to model MessageResponse
 func MessageToResponse(message *entity.Message) *model.MessageResponse {
 	return &model.MessageResponse{
 		ID:     message.ID,
@@ -18,12 +19,7 @@ func MessageToResponse(message *entity.Message) *model.MessageResponse {
 	}
 }
 
-func MessageToSendResponse(message *entity.Message) *model.SendMessageResponse {
-	return &model.SendMessageResponse{
-		Message: *MessageToResponse(message),
-	}
-}
-
+// MessagesToMessageListResponse convert list of entity Message to model MessageListResponse
 func MessagesToMessageListResponse(messages []entity.Message, hasMore bool) *model.MessageListResponse {
 	responses := make([]model.MessageResponse, len(messages))
 	for i, message := range messages {

@@ -35,7 +35,7 @@ func NewMessageUseCase(db *gorm.DB, validate *validator.Validate, log *logrus.Lo
 	}
 }
 
-func (c *MessageUseCase) Send(ctx context.Context, request *model.SendMessageRequest) (*model.SendMessageResponse, error) {
+func (c *MessageUseCase) Send(ctx context.Context, request *model.SendMessageRequest) (*model.MessageResponse, error) {
 	// begin transaction
 	tx := c.DB.WithContext(ctx).Begin()
 	defer tx.Rollback()
@@ -103,7 +103,7 @@ func (c *MessageUseCase) Send(ctx context.Context, request *model.SendMessageReq
 	}
 
 	// return response
-	return converter.MessageToSendResponse(message), nil
+	return converter.MessageToResponse(message), nil
 }
 
 func (c *MessageUseCase) List(ctx context.Context, request *model.GetMessagesRequest) (*model.MessageListResponse, error) {
