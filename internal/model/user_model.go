@@ -15,11 +15,6 @@ type AuthResponse struct {
 	Token string       `json:"token"`
 }
 
-type AnonymousAuthResponse struct {
-	Participant ParticipantResponse `json:"participant"`
-	Token       string              `json:"token"`
-}
-
 type RegisterUserRequest struct {
 	Username string `json:"username" validate:"required,min=3,max=30,alphanum"`
 	Email    string `json:"email" validate:"required,email,max=255"`
@@ -33,7 +28,8 @@ type LoginUserRequest struct {
 }
 
 type AnonymousUserRequest struct {
-	RoomCode string `json:"room_code" validate:"required,len=6,alphanum"`
+	RoomCode    string `json:"room_code" validate:"required,len=6,alphanum"`
+	DisplayName string `json:"display_name" validate:"required,min=3,max=30"`
 }
 
 type VerifyUserRequest struct {

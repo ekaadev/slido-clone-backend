@@ -84,7 +84,8 @@ Request Body:
 
 ```json
 {
-  "room_code": "ABC123"
+  "room_code": "ABC123",
+  "display_name": "string"
 }
 ```
 
@@ -95,8 +96,11 @@ Response 200:
   "data": {
     "participant": {
       "id": 67,
+      "room_id": 10,
       "display_name": "string",
-      "is_anonymous": true
+      "xp_score": 0,
+      "is_anonymous": true,
+      "joined_at": "2024-11-11T10:05:00Z"
     },
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }

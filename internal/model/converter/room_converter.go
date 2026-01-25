@@ -5,6 +5,7 @@ import (
 	"slido-clone-backend/internal/model"
 )
 
+// RoomToResponse convert entity Room to model RoomResponse
 func RoomToResponse(room *entity.Room) *model.RoomResponse {
 	return &model.RoomResponse{
 		ID:          room.ID,
@@ -17,6 +18,7 @@ func RoomToResponse(room *entity.Room) *model.RoomResponse {
 	}
 }
 
+// RoomToCreateRoomResponse convert entity Room and participantID to model CreateRoomResponse
 func RoomToCreateRoomResponse(room *entity.Room, participantID uint) *model.CreateRoomResponse {
 	return &model.CreateRoomResponse{
 		Room:          *RoomToResponse(room),
@@ -24,6 +26,7 @@ func RoomToCreateRoomResponse(room *entity.Room, participantID uint) *model.Crea
 	}
 }
 
+// RoomToDetailResponse convert entity Room with relations to model RoomDetailResponse
 func RoomToDetailResponse(room *entity.Room) *model.RoomDetailResponse {
 	return &model.RoomDetailResponse{
 		ID:       room.ID,
@@ -44,12 +47,7 @@ func RoomToDetailResponse(room *entity.Room) *model.RoomDetailResponse {
 	}
 }
 
-func RoomToGetRoomDetailResponse(room *entity.Room) *model.GetRoomDetailResponse {
-	return &model.GetRoomDetailResponse{
-		Room: *RoomToDetailResponse(room),
-	}
-}
-
+// RoomToUpdateToCloseResponse convert entity Room to model UpdateToCloseRoom for close room response
 func RoomToUpdateToCloseResponse(room *entity.Room) *model.UpdateToCloseRoom {
 	return &model.UpdateToCloseRoom{
 		ID:       room.ID,
@@ -58,12 +56,7 @@ func RoomToUpdateToCloseResponse(room *entity.Room) *model.UpdateToCloseRoom {
 	}
 }
 
-func UpdateToCloseRoomToResponse(update *entity.Room) *model.UpdateToCloseRoomResponse {
-	return &model.UpdateToCloseRoomResponse{
-		Room: *RoomToUpdateToCloseResponse(update),
-	}
-}
-
+// RoomToListItemResponse convert entity Room to model RoomListItem
 func RoomToListItemResponse(room *entity.Room) *model.RoomListItem {
 	return &model.RoomListItem{
 		ID:                room.ID,
@@ -75,6 +68,7 @@ func RoomToListItemResponse(room *entity.Room) *model.RoomListItem {
 	}
 }
 
+// RoomsToListResponse wrap list of RoomListItem to RoomListResponse
 func RoomsToListResponse(roomsList []*model.RoomListItem) *model.RoomListResponse {
 	return &model.RoomListResponse{
 		RoomListItem: roomsList,

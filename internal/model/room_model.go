@@ -36,10 +36,6 @@ type RoomDetailResponse struct {
 	CreatedAt time.Time     `json:"created_at"`
 }
 
-type GetRoomDetailResponse struct {
-	Room RoomDetailResponse `json:"room"`
-}
-
 type PresenterInfo struct {
 	ID       uint   `json:"id"`
 	Username string `json:"username"`
@@ -79,10 +75,6 @@ type UpdateToCloseRoom struct {
 	ID       uint       `json:"id"`
 	Status   string     `json:"status"`
 	ClosedAt *time.Time `json:"closed_at,omitempty"`
-}
-
-type UpdateToCloseRoomResponse struct {
-	Room UpdateToCloseRoom `json:"room"`
 }
 
 type SearchRoomsRequest struct {

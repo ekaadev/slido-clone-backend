@@ -68,7 +68,7 @@ func (h *EventHandler) handleMessageSend(client *Client, data json.RawMessage) e
 	// broadcast message ke semua client di room
 	broadcastData := WSMessage{
 		Event: EventMessageSend,
-		Data:  mustMarshal(response.Message),
+		Data:  mustMarshal(response),
 	}
 	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
 	h.broadcastLeaderboardUpdate(client)

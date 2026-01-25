@@ -5,6 +5,7 @@ import (
 	"slido-clone-backend/internal/model"
 )
 
+// ParticipantToResponse convert entity Participant to model ParticipantResponse
 func ParticipantToResponse(participant *entity.Participant) *model.ParticipantResponse {
 	return &model.ParticipantResponse{
 		ID:          participant.ID,
@@ -16,6 +17,7 @@ func ParticipantToResponse(participant *entity.Participant) *model.ParticipantRe
 	}
 }
 
+// ParticipantToJoinRoomResponse convert entity Participant and token to model JoinRoomResponse
 func ParticipantToJoinRoomResponse(participant *entity.Participant, token string) *model.JoinRoomResponse {
 	return &model.JoinRoomResponse{
 		Participant: *ParticipantToResponse(participant),
@@ -23,6 +25,7 @@ func ParticipantToJoinRoomResponse(participant *entity.Participant, token string
 	}
 }
 
+// ParticipantToListItem convert entity Participant to model ParticipantListItem
 func ParticipantToListItem(participant *entity.Participant) *model.ParticipantListItem {
 	return &model.ParticipantListItem{
 		ID:          participant.ID,
@@ -32,12 +35,14 @@ func ParticipantToListItem(participant *entity.Participant) *model.ParticipantLi
 	}
 }
 
+// ParticipantsToListResponse wrap list of ParticipantListItem to ParticipantListResponse
 func ParticipantsToListResponse(participants []*model.ParticipantListItem) *model.ParticipantListResponse {
 	return &model.ParticipantListResponse{
 		Participants: participants,
 	}
 }
 
+// ParticipantToInfo convert entity Participant to model ParticipantInfo
 func ParticipantToInfo(participant *entity.Participant) *model.ParticipantInfo {
 	return &model.ParticipantInfo{
 		ID:          participant.ID,
@@ -45,6 +50,7 @@ func ParticipantToInfo(participant *entity.Participant) *model.ParticipantInfo {
 	}
 }
 
+// ParticipantToLeaderboardEntry convert entity Participant and rank to model LeaderboardEntry
 func ParticipantToLeaderboardEntry(participant *entity.Participant, rank int) *model.LeaderboardEntry {
 	return &model.LeaderboardEntry{
 		Rank: rank,
@@ -57,6 +63,7 @@ func ParticipantToLeaderboardEntry(participant *entity.Participant, rank int) *m
 	}
 }
 
+// ParticipantsToLeaderboardResponse convert list of Participant to LeaderboardResponse with myRank info
 func ParticipantsToLeaderboardResponse(participants []entity.Participant, myRank *model.MyRank, totalParticipants int) *model.LeaderboardResponse {
 	leaderboard := make([]model.LeaderboardEntry, len(participants))
 	for i, participant := range participants {
