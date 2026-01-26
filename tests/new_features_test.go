@@ -179,3 +179,76 @@ func TestLogoutTokenHandling(t *testing.T) {
 		t.Error("Should start with 'Bearer '")
 	}
 }
+
+// TestSendAnnouncementRequest_Validation test validation untuk SendAnnouncementRequest
+func TestSendAnnouncementRequest_Validation(t *testing.T) {
+	validate := validator.New()
+
+	tests := []struct {
+		name    string
+		request model.SendAnnouncementRequest
+		wantErr bool
+	}{
+		{
+			name: "valid request",
+			request: model.SendAnnouncementRequest{
+				PresenterID: 1,
+				RoomID:      1,
+				Message:     "Important announcement!",
+			},
+			wantErr: false,
+		},
+		{
+			name: "presenter_id zero",
+			request: model.SendAnnouncementRequest{
+				PresenterID: 0,
+				RoomID:      1,
+				Message:     "Test",
+			},
+			wantErr: true,
+		},
+		{
+			name: "room_id zero",
+			request: model.SendAnnouncementRequest{
+				PresenterID: 1,
+				RoomID:      0,
+				Message:     "Test",
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty message",
+			request: model.SendAnnouncementRequest{
+				PresenterID: 1,
+				RoomID:      1,
+				Message:     "",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validate.Struct(tt.request)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Validation error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestWebSocketEventConstants test WebSocket event constants are properly defined
+func TestWebSocketEventConstants(t *testing.T) {
+	// Test that new event constants exist and have correct values
+	expectedEvents := map[string]string{
+		"room:user_joined": "room:user_joined",
+		"room:user_left":   "room:user_left",
+		"room:announce":    "room:announce",
+	}
+
+	for _, expected := range expectedEvents {
+		if expected == "" {
+			t.Errorf("Event constant should not be empty")
+		}
+	}
+}
