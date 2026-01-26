@@ -16,6 +16,7 @@ type RouteConfig struct {
 	QuestionController      *http.QuestionController
 	PollController          *http.PollController
 	XPTransactionController *http.XPTransactionController
+	ActivityController      *http.ActivityController
 	AuthMiddleware          fiber.Handler
 	WSHandler               *websocket.WebSocketHandler
 }
@@ -65,6 +66,9 @@ func (c *RouteConfig) SetupAuthRoute() {
 
 	// XP Transactions route
 	c.App.Get("/api/v1/rooms/:room_id/xp-transactions", c.XPTransactionController.GetTransactions)
+
+	// Timeline route (unified activity feed)
+	c.App.Get("/api/v1/rooms/:room_id/timeline", c.ActivityController.GetTimeline)
 
 	// Q&A routes
 	c.App.Post("/api/v1/rooms/:room_id/questions", c.QuestionController.Submit)

@@ -39,4 +39,7 @@ const (
 	EventLeaderboardUpdate  = "leaderboard:updated" // Server -> Client
 	EventXPAwarded          = "xp:awarded"
 	EventLeaderboardRequest = "leaderboard:request" // Client -> Server
+
+	// Activity/Timeline events
+	EventActivityNew = "activity:new" // Server -> Client (unified timeline item)
 )
