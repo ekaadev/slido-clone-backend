@@ -11,13 +11,15 @@ type EventHandler struct {
 	messageUseCase     *usecase.MessageUseCase
 	participantUseCase *usecase.ParticipantUseCase
 	questionUseCase    *usecase.QuestionUseCase
+	pollUseCase        *usecase.PollUseCase
 }
 
-func NewEventHandler(messageUseCase *usecase.MessageUseCase, participantUseCase *usecase.ParticipantUseCase, questionUseCase *usecase.QuestionUseCase) *EventHandler {
+func NewEventHandler(messageUseCase *usecase.MessageUseCase, participantUseCase *usecase.ParticipantUseCase, questionUseCase *usecase.QuestionUseCase, pollUseCase *usecase.PollUseCase) *EventHandler {
 	return &EventHandler{
 		messageUseCase:     messageUseCase,
 		participantUseCase: participantUseCase,
 		questionUseCase:    questionUseCase,
+		pollUseCase:        pollUseCase,
 	}
 }
 
@@ -44,6 +46,9 @@ func (h *EventHandler) HandleMessage(client *Client, data []byte) error {
 		return h.handleQuestionUpvote(client, wsMsg.Data)
 	case EventQuestionRemoveUpvote:
 		return h.handleQuestionRemoveUpvote(client, wsMsg.Data)
+	// Poll events
+	case EventPollVote:
+		return h.handlePollVote(client, wsMsg.Data)
 	default:
 		client.hub.log.WithField("event", wsMsg.Event).Warn("unknown event")
 		return nil
@@ -230,6 +235,43 @@ func (h *EventHandler) handleQuestionRemoveUpvote(client *Client, data json.RawM
 	broadcastData := WSMessage{
 		Event: EventQuestionUpvoted,
 		Data:  mustMarshal(response),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	h.broadcastLeaderboardUpdate(client)
+	return nil
+}
+
+// handlePollVote handle poll vote via websocket
+func (h *EventHandler) handlePollVote(client *Client, data json.RawMessage) error {
+	// parse payload
+	var payload struct {
+		PollID   uint `json:"poll_id"`
+		OptionID uint `json:"option_id"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to parse poll vote payload")
+		return err
+	}
+
+	// create request untuk usecase
+	request := &model.SubmitVoteRequest{
+		PollID:        payload.PollID,
+		ParticipantID: client.participantID,
+		RoomID:        client.roomID,
+		OptionID:      payload.OptionID,
+	}
+
+	// call usecase
+	response, err := h.pollUseCase.SubmitVote(context.Background(), request)
+	if err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to submit poll vote")
+		return err
+	}
+
+	// broadcast poll:results_updated ke semua client di room
+	broadcastData := WSMessage{
+		Event: EventPollResultsUpdate,
+		Data:  mustMarshal(response.UpdatedResults),
 	}
 	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
 	h.broadcastLeaderboardUpdate(client)

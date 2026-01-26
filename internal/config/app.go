@@ -36,6 +36,9 @@ func Bootstrap(config *BootstrapConfig) {
 	xpTransactionRepository := repository.NewXPTransactionRepository(config.Log)
 	questionRepository := repository.NewQuestionRepository(config.Log)
 	voteRepository := repository.NewVoteRepository(config.Log)
+	pollRepository := repository.NewPollRepository(config.Log)
+	pollOptionRepository := repository.NewPollOptionRepository(config.Log)
+	pollResponseRepository := repository.NewPollResponseRepository(config.Log)
 
 	// setup utils
 	tokenUtil := util.NewTokenUtil(config.Config.GetString("JWT_SECRET"), config.Redis)
@@ -47,6 +50,7 @@ func Bootstrap(config *BootstrapConfig) {
 	xpTransactionUseCase := usecase.NewXPTransactionUseCase(config.DB, config.Validator, config.Log, xpTransactionRepository)
 	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository, xpTransactionUseCase)
 	questionUseCase := usecase.NewQuestionUseCase(config.DB, config.Log, config.Validator, questionRepository, voteRepository, roomRepository, participantRepository, xpTransactionRepository)
+	pollUseCase := usecase.NewPollUseCase(config.DB, config.Log, config.Validator, pollRepository, pollOptionRepository, pollResponseRepository, roomRepository, xpTransactionRepository)
 
 	// configuration websocket hub (sebelum controller yang membutuhkan hub)
 	hub := websocket.NewHub(config.Log)
@@ -58,12 +62,13 @@ func Bootstrap(config *BootstrapConfig) {
 	participantController := http.NewParticipantController(config.Log, participantUseCase)
 	messageController := http.NewMessageController(config.Log, messageUseCase)
 	questionController := http.NewQuestionController(config.Log, questionUseCase, hub)
+	pollController := http.NewPollController(config.Log, pollUseCase, hub)
 
 	// setup HTTP middleware
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
 
 	// websocket handler
-	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase, questionUseCase)
+	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase, questionUseCase, pollUseCase)
 	wsHandler := websocket.NewWebSocketHandler(hub, config.Log, tokenUtil, eventHandler)
 
 	// setup HTTP routes
@@ -74,6 +79,7 @@ func Bootstrap(config *BootstrapConfig) {
 		ParticipantController: participantController,
 		MessageController:     messageController,
 		QuestionController:    questionController,
+		PollController:        pollController,
 		AuthMiddleware:        authMiddleware,
 		WSHandler:             wsHandler,
 	}
