@@ -39,6 +39,7 @@ func Bootstrap(config *BootstrapConfig) {
 	pollRepository := repository.NewPollRepository(config.Log)
 	pollOptionRepository := repository.NewPollOptionRepository(config.Log)
 	pollResponseRepository := repository.NewPollResponseRepository(config.Log)
+	activityRepository := repository.NewActivityRepository(config.Log)
 
 	// setup utils
 	tokenUtil := util.NewTokenUtil(config.Config.GetString("JWT_SECRET"), config.Redis)
@@ -51,6 +52,7 @@ func Bootstrap(config *BootstrapConfig) {
 	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository, xpTransactionUseCase)
 	questionUseCase := usecase.NewQuestionUseCase(config.DB, config.Log, config.Validator, questionRepository, voteRepository, roomRepository, participantRepository, xpTransactionRepository)
 	pollUseCase := usecase.NewPollUseCase(config.DB, config.Log, config.Validator, pollRepository, pollOptionRepository, pollResponseRepository, roomRepository, xpTransactionRepository)
+	activityUseCase := usecase.NewActivityUseCase(config.DB, config.Log, config.Validator, activityRepository, roomRepository)
 
 	// configuration websocket hub (sebelum controller yang membutuhkan hub)
 	hub := websocket.NewHub(config.Log)
@@ -64,6 +66,7 @@ func Bootstrap(config *BootstrapConfig) {
 	questionController := http.NewQuestionController(config.Log, questionUseCase, hub)
 	pollController := http.NewPollController(config.Log, pollUseCase, hub)
 	xpTransactionController := http.NewXPTransactionController(config.Log, xpTransactionUseCase)
+	activityController := http.NewActivityController(config.Log, activityUseCase)
 
 	// setup HTTP middleware
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
@@ -82,6 +85,7 @@ func Bootstrap(config *BootstrapConfig) {
 		QuestionController:      questionController,
 		PollController:          pollController,
 		XPTransactionController: xpTransactionController,
+		ActivityController:      activityController,
 		AuthMiddleware:          authMiddleware,
 		WSHandler:               wsHandler,
 	}

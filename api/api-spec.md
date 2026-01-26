@@ -247,3 +247,73 @@ Notifikasi ketika participant mendapatkan XP.
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/rooms/:room_id/announcement` | Kirim announcement ke room (presenter only) |
+
+---
+
+## Timeline API (Unified Activity Feed)
+
+### GET /api/v1/rooms/:room_id/timeline
+
+Mendapatkan gabungan messages, questions, dan polls dalam satu timeline seperti Discord.
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `before` | RFC3339 | Cursor untuk load older items |
+| `after` | RFC3339 | Cursor untuk load newer items |
+| `limit` | number | Jumlah items (default: 50, max: 100) |
+
+**Response:**
+```json
+{
+  "data": {
+    "items": [
+      {
+        "type": "message",
+        "id": 1,
+        "created_at": "2026-01-26T09:03:00Z",
+        "data": {"content": "Hello!", "participant": {"id": 1, "display_name": "John"}}
+      },
+      {
+        "type": "poll",
+        "id": 2,
+        "created_at": "2026-01-26T09:02:00Z",
+        "data": {"question": "Choose topic", "options": [...], "status": "active"}
+      },
+      {
+        "type": "question",
+        "id": 5,
+        "created_at": "2026-01-26T09:01:00Z",
+        "data": {"content": "What is...?", "upvote_count": 3, "is_validated": false}
+      }
+    ],
+    "has_more": true,
+    "oldest_at": "2026-01-26T09:01:00Z",
+    "newest_at": "2026-01-26T09:03:00Z"
+  }
+}
+```
+
+**Item Types:**
+- `message` - Chat message
+- `question` - Q&A question
+- `poll` - Polling
+- `announcement` - Room announcement
+
+---
+
+## Timeline WebSocket Event
+
+#### `activity:new`
+Broadcast ketika ada item baru (message, question, poll, announcement).
+```json
+{
+  "event": "activity:new",
+  "data": {
+    "type": "message",
+    "id": 123,
+    "created_at": "2026-01-26T09:05:00Z",
+    "data": {"content": "New message", "participant": {...}}
+  }
+}
+```
