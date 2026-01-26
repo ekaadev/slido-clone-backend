@@ -20,6 +20,8 @@ tags:
     description: XP ranking and leaderboard
   - name: Poll
     description: Polling operations
+  - name: XPTransaction
+    description: XP transaction history
 
 paths:
   /users/register:
@@ -67,6 +69,25 @@ paths:
                 $ref: '#/components/schemas/AuthResponseWrapper'
         '401':
           description: Invalid credentials
+
+  /users/logout:
+    post:
+      tags:
+        - User
+      summary: Logout user and invalidate token
+      operationId: logoutUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseWrapper'
+        '401':
+          description: Unauthorized
+
 
   /users/anonymous:
     post:
@@ -183,6 +204,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateToCloseRoomWrapper'
+        '404':
+          description: Room not found
+
+  /rooms/{room_id}:
+    delete:
+      tags:
+        - Room
+      summary: Delete a room (soft delete, presenter only, room must be closed)
+      operationId: deleteRoom
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Room deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponseWrapper'
+        '400':
+          description: Room must be closed before deletion
+        '404':
+          description: Room not found
+
+  /rooms/{room_id}/xp-transactions:
+    get:
+      tags:
+        - XPTransaction
+      summary: Get XP transactions history for participant
+      operationId: getXPTransactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        '200':
+          description: XP transactions list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XPTransactionsResponseWrapper'
         '404':
           description: Room not found
 
@@ -1112,4 +1189,52 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/PollHistoryResponse'
+
+    # XP Transaction Schemas
+    XPTransactionItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        points:
+          type: integer
+        source_type:
+          type: string
+        source_id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    XPTransactionsResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/XPTransactionItem'
+        total_xp:
+          type: integer
+        total:
+          type: integer
+
+    XPTransactionsResponseWrapper:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/XPTransactionsResponse'
+
+    # Message Response Schema
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    MessageResponseWrapper:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/MessageResponse'
+
 
