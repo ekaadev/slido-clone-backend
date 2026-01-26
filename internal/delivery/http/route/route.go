@@ -52,6 +52,7 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Post("/api/v1/rooms", c.RoomController.Create)
 	c.App.Patch("/api/v1/rooms/:room_id/close", c.RoomController.UpdateToClosed)
 	c.App.Delete("/api/v1/rooms/:room_id", c.RoomController.Delete)
+	c.App.Post("/api/v1/rooms/:room_id/announcement", c.RoomController.SendAnnouncement)
 	c.App.Post("/api/v1/rooms/:room_code/join", c.ParticipantController.Join)
 	c.App.Get("/api/v1/rooms/:room_id/participants", c.ParticipantController.List)
 

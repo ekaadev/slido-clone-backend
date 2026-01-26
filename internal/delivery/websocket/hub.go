@@ -1,6 +1,11 @@
 package websocket
 
-import "github.com/sirupsen/logrus"
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/sirupsen/logrus"
+)
 
 type Hub struct {
 	clients    map[*Client]bool          // registered clients
@@ -42,8 +47,14 @@ func (h *Hub) Run() {
 				"participant_id": client.participantID,
 			}).Info("Client connected")
 
+			// broadcast participant joined ke room
+			h.broadcastParticipantJoined(client)
+
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
+				// broadcast participant left ke room sebelum unregister
+				h.broadcastParticipantLeft(client)
+
 				delete(h.clients, client)
 				close(client.send)
 
@@ -91,4 +102,41 @@ func (h *Hub) BroadcastToRoom(roomID uint, msg []byte) {
 			}
 		}
 	}
+}
+
+// broadcastParticipantJoined broadcast ketika participant baru join room
+func (h *Hub) broadcastParticipantJoined(client *Client) {
+	data := WSMessage{
+		Event: EventRoomUserJoin,
+		Data: h.mustMarshal(map[string]interface{}{
+			"participant_id": client.participantID,
+			"display_name":   client.displayName,
+			"is_anonymous":   client.isAnonymous,
+			"joined_at":      time.Now().Format(time.RFC3339),
+		}),
+	}
+	h.BroadcastToRoom(client.roomID, h.mustMarshal(data))
+}
+
+// broadcastParticipantLeft broadcast ketika participant disconnect dari room
+func (h *Hub) broadcastParticipantLeft(client *Client) {
+	data := WSMessage{
+		Event: EventRoomUserLeft,
+		Data: h.mustMarshal(map[string]interface{}{
+			"participant_id": client.participantID,
+			"display_name":   client.displayName,
+			"left_at":        time.Now().Format(time.RFC3339),
+		}),
+	}
+	h.BroadcastToRoom(client.roomID, h.mustMarshal(data))
+}
+
+// mustMarshal helper untuk marshal JSON, panic jika error
+func (h *Hub) mustMarshal(v interface{}) []byte {
+	data, err := json.Marshal(v)
+	if err != nil {
+		h.log.WithField("error", err).Error("failed to marshal JSON")
+		return []byte("{}")
+	}
+	return data
 }
