@@ -12,8 +12,6 @@ go run cmd/web/main.go
 
 Before running the migrations, ensure you have `golang migrate` installed.
 
-```bash
-
 ### Create New Migration
 
 If you need to create a new migration, use the following command:
