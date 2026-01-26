@@ -210,6 +210,50 @@ func (c *RoomUseCase) Search(ctx context.Context, request *model.SearchRoomsRequ
 	return converter.RoomsToListResponse(responses), nil
 }
 
+// Delete usecase untuk menghapus room (soft delete, presenter only)
+// Hanya bisa delete room yang sudah closed
+func (c *RoomUseCase) Delete(ctx context.Context, request *model.DeleteRoomRequest) error {
+	// begin transaction
+	tx := c.DB.WithContext(ctx).Begin()
+	defer tx.Rollback()
+
+	// validate request
+	if err := c.Validate.Struct(request); err != nil {
+		c.Log.Warnf("Delete - Invalid request: %+v", err)
+		return fiber.ErrBadRequest
+	}
+
+	// find room by id and presenter id
+	room, err := c.RoomRepository.FindByIdAndPresenterId(tx, request.RoomID, request.PresenterID)
+	if err != nil {
+		c.Log.Warnf("Delete - Failed to find room: %+v", err)
+		return fiber.ErrInternalServerError
+	}
+
+	if room == nil {
+		return fiber.ErrNotFound
+	}
+
+	// check if room is closed
+	if room.Status != "closed" {
+		return fiber.NewError(fiber.StatusBadRequest, "Room must be closed before deletion")
+	}
+
+	// soft delete room
+	if err = c.RoomRepository.SoftDelete(tx, request.RoomID); err != nil {
+		c.Log.Warnf("Delete - Failed to delete room: %+v", err)
+		return fiber.ErrInternalServerError
+	}
+
+	// commit transaction
+	if err = tx.Commit().Error; err != nil {
+		c.Log.Warnf("Delete - Failed to commit transaction: %+v", err)
+		return fiber.ErrInternalServerError
+	}
+
+	return nil
+}
+
 // GenerateRoomCode generate with crypto/rand
 func GenerateRoomCode(n int) (string, error) {
 	result := make([]byte, n)

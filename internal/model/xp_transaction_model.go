@@ -26,3 +26,26 @@ type GetLeaderboardRequest struct {
 	RoomID        uint `json:"-" validate:"required,min=1"`
 	ParticipantID uint `json:"participant_id" validate:"required,min=1"`
 }
+
+// GetXPTransactionsRequest request untuk get XP transactions
+type GetXPTransactionsRequest struct {
+	RoomID        uint `json:"-" validate:"required,min=1"`
+	ParticipantID uint `json:"-" validate:"required,min=1"`
+	Limit         int  `json:"limit" validate:"omitempty,min=1,max=100"`
+}
+
+// XPTransactionItem single XP transaction item
+type XPTransactionItem struct {
+	ID         uint   `json:"id"`
+	Points     int    `json:"points"`
+	SourceType string `json:"source_type"`
+	SourceID   uint   `json:"source_id,omitempty"`
+	CreatedAt  string `json:"created_at"`
+}
+
+// GetXPTransactionsResponse response untuk get XP transactions
+type GetXPTransactionsResponse struct {
+	Transactions []XPTransactionItem `json:"transactions"`
+	TotalXP      int                 `json:"total_xp"`
+	Total        int64               `json:"total"`
+}

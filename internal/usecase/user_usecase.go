@@ -232,3 +232,13 @@ func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequ
 	// return and convert to join room response
 	return converter.ParticipantToJoinRoomResponse(participant, token), nil
 }
+
+// Logout usecase untuk logout user dengan invalidate token
+func (c *UserUseCase) Logout(ctx context.Context, tokenString string) error {
+	// invalidate token di redis
+	if err := c.TokenUtil.InvalidateToken(ctx, tokenString); err != nil {
+		c.Log.Errorf("Failed to invalidate token: %+v", err)
+		return fiber.ErrInternalServerError
+	}
+	return nil
+}

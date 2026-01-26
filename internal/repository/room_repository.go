@@ -65,3 +65,8 @@ func (r *RoomRepository) FindByRoomCode(db *gorm.DB, code string) (*entity.Room,
 
 	return &room, nil
 }
+
+// SoftDelete soft delete room by id (uses GORM soft delete)
+func (r *RoomRepository) SoftDelete(db *gorm.DB, roomID uint) error {
+	return db.Delete(&entity.Room{}, roomID).Error
+}

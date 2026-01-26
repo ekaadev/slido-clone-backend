@@ -47,7 +47,7 @@ func Bootstrap(config *BootstrapConfig) {
 	userUseCase := usecase.NewUserUseCase(config.DB, config.Log, config.Validator, userRepository, participantRepository, roomRepository, tokenUtil)
 	roomUseCase := usecase.NewRoomUseCase(config.DB, config.Log, config.Validator, roomRepository, participantRepository)
 	participantUseCase := usecase.NewParticipantUseCase(config.DB, config.Log, config.Validator, participantRepository, roomRepository, userRepository, tokenUtil)
-	xpTransactionUseCase := usecase.NewXPTransactionUseCase(config.DB, config.Validator, config.Log, xpTransactionRepository)
+	xpTransactionUseCase := usecase.NewXPTransactionUseCase(config.DB, config.Validator, config.Log, xpTransactionRepository, roomRepository)
 	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository, xpTransactionUseCase)
 	questionUseCase := usecase.NewQuestionUseCase(config.DB, config.Log, config.Validator, questionRepository, voteRepository, roomRepository, participantRepository, xpTransactionRepository)
 	pollUseCase := usecase.NewPollUseCase(config.DB, config.Log, config.Validator, pollRepository, pollOptionRepository, pollResponseRepository, roomRepository, xpTransactionRepository)
@@ -63,6 +63,7 @@ func Bootstrap(config *BootstrapConfig) {
 	messageController := http.NewMessageController(config.Log, messageUseCase)
 	questionController := http.NewQuestionController(config.Log, questionUseCase, hub)
 	pollController := http.NewPollController(config.Log, pollUseCase, hub)
+	xpTransactionController := http.NewXPTransactionController(config.Log, xpTransactionUseCase)
 
 	// setup HTTP middleware
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
@@ -73,15 +74,16 @@ func Bootstrap(config *BootstrapConfig) {
 
 	// setup HTTP routes
 	routeConfig := route.RouteConfig{
-		App:                   config.App,
-		UserController:        userController,
-		RoomController:        roomController,
-		ParticipantController: participantController,
-		MessageController:     messageController,
-		QuestionController:    questionController,
-		PollController:        pollController,
-		AuthMiddleware:        authMiddleware,
-		WSHandler:             wsHandler,
+		App:                     config.App,
+		UserController:          userController,
+		RoomController:          roomController,
+		ParticipantController:   participantController,
+		MessageController:       messageController,
+		QuestionController:      questionController,
+		PollController:          pollController,
+		XPTransactionController: xpTransactionController,
+		AuthMiddleware:          authMiddleware,
+		WSHandler:               wsHandler,
 	}
 	routeConfig.Setup()
 }
