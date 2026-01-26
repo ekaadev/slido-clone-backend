@@ -14,6 +14,7 @@ const (
 	EventRoomUserJoin = "room:user_joined"
 	EventRoomUserLeft = "room:user_left"
 	EventRoomClosed   = "room:closed"
+	EventRoomAnnounce = "room:announce" // Server -> Client (broadcast from presenter)
 
 	// Message events
 	EventMessageSend = "message:send" // Client -> Server

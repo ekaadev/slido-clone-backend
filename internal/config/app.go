@@ -58,7 +58,7 @@ func Bootstrap(config *BootstrapConfig) {
 
 	// setup HTTP controllers
 	userController := http.NewUserController(config.Log, userUseCase)
-	roomController := http.NewRoomController(config.Log, roomUseCase, tokenUtil)
+	roomController := http.NewRoomController(config.Log, roomUseCase, tokenUtil, hub)
 	participantController := http.NewParticipantController(config.Log, participantUseCase)
 	messageController := http.NewMessageController(config.Log, messageUseCase)
 	questionController := http.NewQuestionController(config.Log, questionUseCase, hub)

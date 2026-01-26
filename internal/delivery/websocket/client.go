@@ -27,10 +27,11 @@ type Client struct {
 	send chan []byte     // channel untuk mengirim pesan ke client
 
 	// identitas client
-	userID        uint // dari jwt token
-	roomID        uint // room yang dijoin
-	participantID uint // dari participant
-	isAnonymous   bool // anonymous
+	userID        uint   // dari jwt token
+	roomID        uint   // room yang dijoin
+	participantID uint   // dari participant
+	displayName   string // nama display participant
+	isAnonymous   bool   // anonymous
 
 	// handler reference (untuk process events)
 	messageHandler func(*Client, []byte) error
