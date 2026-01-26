@@ -3,6 +3,7 @@ package tests
 import (
 	"slido-clone-backend/internal/model"
 	"testing"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -250,5 +251,98 @@ func TestWebSocketEventConstants(t *testing.T) {
 		if expected == "" {
 			t.Errorf("Event constant should not be empty")
 		}
+	}
+}
+
+// TestGetTimelineRequest_Validation test validation untuk GetTimelineRequest
+func TestGetTimelineRequest_Validation(t *testing.T) {
+	validate := validator.New()
+
+	tests := []struct {
+		name    string
+		request model.GetTimelineRequest
+		wantErr bool
+	}{
+		{
+			name: "valid request",
+			request: model.GetTimelineRequest{
+				RoomID: 1,
+				Limit:  50,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid with before cursor",
+			request: model.GetTimelineRequest{
+				RoomID: 1,
+				Before: "2026-01-26T09:00:00Z",
+				Limit:  50,
+			},
+			wantErr: false,
+		},
+		{
+			name: "room_id zero",
+			request: model.GetTimelineRequest{
+				RoomID: 0,
+				Limit:  50,
+			},
+			wantErr: true,
+		},
+		{
+			name: "limit too high",
+			request: model.GetTimelineRequest{
+				RoomID: 1,
+				Limit:  200,
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validate.Struct(tt.request)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Validation error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestTimelineItemStructure test TimelineItem structure
+func TestTimelineItemStructure(t *testing.T) {
+	item := model.TimelineItem{
+		Type:      model.ActivityTypeMessage,
+		ID:        1,
+		CreatedAt: time.Now(),
+		Data: model.MessageTimelineData{
+			Content: "Hello!",
+			Participant: model.ParticipantInfo{
+				ID:          1,
+				DisplayName: "John",
+			},
+		},
+	}
+
+	if item.Type != "message" {
+		t.Errorf("Expected Type 'message', got '%s'", item.Type)
+	}
+	if item.ID != 1 {
+		t.Errorf("Expected ID 1, got %d", item.ID)
+	}
+}
+
+// TestActivityTypeConstants test activity type constants
+func TestActivityTypeConstants(t *testing.T) {
+	if model.ActivityTypeMessage != "message" {
+		t.Errorf("ActivityTypeMessage should be 'message'")
+	}
+	if model.ActivityTypeQuestion != "question" {
+		t.Errorf("ActivityTypeQuestion should be 'question'")
+	}
+	if model.ActivityTypePoll != "poll" {
+		t.Errorf("ActivityTypePoll should be 'poll'")
+	}
+	if model.ActivityTypeAnnouncement != "announcement" {
+		t.Errorf("ActivityTypeAnnouncement should be 'announcement'")
 	}
 }
