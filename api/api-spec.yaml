@@ -18,6 +18,8 @@ tags:
     description: Live chat messages
   - name: Leaderboard
     description: XP ranking and leaderboard
+  - name: Poll
+    description: Polling operations
 
 paths:
   /users/register:
@@ -331,6 +333,153 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LeaderboardResponseWrapper'
+
+  # Poll endpoints
+  /rooms/{room_id}/polls:
+    post:
+      tags:
+        - Poll
+      summary: Create a new poll (Presenter only)
+      operationId: createPoll
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePollRequest'
+      responses:
+        '201':
+          description: Poll created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePollResponseWrapper'
+        '400':
+          description: Invalid request body
+        '403':
+          description: Not authorized (presenter only)
+
+    get:
+      tags:
+        - Poll
+      summary: Get poll history
+      operationId: getPollHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, closed, all]
+            default: all
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Poll history list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PollHistoryResponseWrapper'
+
+  /rooms/{room_id}/polls/active:
+    get:
+      tags:
+        - Poll
+      summary: Get active polls
+      operationId: getActivePolls
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Active polls list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetActivePollResponseWrapper'
+
+  /polls/{poll_id}/vote:
+    post:
+      tags:
+        - Poll
+      summary: Submit vote on a poll
+      operationId: submitVote
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: poll_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitVoteRequest'
+      responses:
+        '200':
+          description: Vote submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitVoteResponseWrapper'
+        '400':
+          description: Invalid request or poll not active
+        '409':
+          description: Already voted on this poll
+
+  /polls/{poll_id}/close:
+    patch:
+      tags:
+        - Poll
+      summary: Close a poll (Presenter only)
+      operationId: closePoll
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: poll_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Poll closed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClosePollResponseWrapper'
+        '400':
+          description: Poll is not active
+        '403':
+          description: Not authorized (presenter only)
+        '404':
+          description: Poll not found
 
 components:
   securitySchemes:
@@ -756,3 +905,211 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/LeaderboardResponse'
+
+    # Poll Schemas
+    CreatePollRequest:
+      type: object
+      required:
+        - question
+        - options
+      properties:
+        question:
+          type: string
+          minLength: 5
+          maxLength: 500
+        options:
+          type: array
+          minItems: 2
+          maxItems: 10
+          items:
+            type: string
+            minLength: 1
+            maxLength: 255
+
+    SubmitVoteRequest:
+      type: object
+      required:
+        - option_id
+      properties:
+        option_id:
+          type: integer
+
+    PollOptionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        poll_id:
+          type: integer
+        option_text:
+          type: string
+        vote_count:
+          type: integer
+        percentage:
+          type: number
+        order:
+          type: integer
+
+    PollResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        room_id:
+          type: integer
+        question:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, closed]
+        total_votes:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        activated_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollOptionResponse'
+        has_voted:
+          type: boolean
+        voted_option:
+          type: integer
+
+    CreatePollResponse:
+      type: object
+      properties:
+        poll:
+          $ref: '#/components/schemas/PollResponse'
+
+    CreatePollResponseWrapper:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CreatePollResponse'
+
+    GetActivePollResponse:
+      type: object
+      properties:
+        polls:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollResponse'
+
+    GetActivePollResponseWrapper:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GetActivePollResponse'
+
+    SubmitVoteResponse:
+      type: object
+      properties:
+        response:
+          type: object
+          properties:
+            id:
+              type: integer
+            poll_id:
+              type: integer
+            participant_id:
+              type: integer
+            poll_option_id:
+              type: integer
+            created_at:
+              type: string
+              format: date-time
+        updated_results:
+          type: object
+          properties:
+            poll_id:
+              type: integer
+            total_votes:
+              type: integer
+            options:
+              type: array
+              items:
+                $ref: '#/components/schemas/PollOptionResponse'
+        xp_earned:
+          type: object
+          properties:
+            points:
+              type: integer
+            new_total:
+              type: integer
+
+    SubmitVoteResponseWrapper:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SubmitVoteResponse'
+
+    ClosePollResponse:
+      type: object
+      properties:
+        poll:
+          type: object
+          properties:
+            id:
+              type: integer
+            status:
+              type: string
+            closed_at:
+              type: string
+              format: date-time
+            final_results:
+              type: object
+              properties:
+                total_votes:
+                  type: integer
+                options:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/PollOptionResponse'
+
+    ClosePollResponseWrapper:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ClosePollResponse'
+
+    PollHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        status:
+          type: string
+        total_votes:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        closed_at:
+          type: string
+          format: date-time
+
+    PollHistoryResponse:
+      type: object
+      properties:
+        polls:
+          type: array
+          items:
+            $ref: '#/components/schemas/PollHistoryItem'
+        total:
+          type: integer
+
+    PollHistoryResponseWrapper:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/PollHistoryResponse'
+
