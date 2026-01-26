@@ -152,3 +152,36 @@ func (c *RoomController) Search(ctx *fiber.Ctx) error {
 		Data: response,
 	})
 }
+
+// Delete handler untuk menghapus room (presenter only, room harus closed)
+func (c *RoomController) Delete(ctx *fiber.Ctx) error {
+	// get user from locals
+	auth := middleware.GetUser(ctx)
+
+	// parse room_id from params
+	roomIDStr := ctx.Params("room_id")
+	roomIDUint64, err := strconv.ParseUint(roomIDStr, 10, 64)
+	if err != nil {
+		c.Log.Warnf("Delete - Invalid room_id: %v", err)
+		return fiber.ErrBadRequest
+	}
+
+	// create request
+	request := &model.DeleteRoomRequest{
+		PresenterID: *auth.UserID,
+		RoomID:      uint(roomIDUint64),
+	}
+
+	// call usecase to delete room
+	if err = c.RoomUseCase.Delete(ctx.UserContext(), request); err != nil {
+		c.Log.Warnf("Failed to delete room: %s", err)
+		return err
+	}
+
+	// return response
+	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
+		Data: map[string]string{
+			"message": "Room deleted successfully",
+		},
+	})
+}
