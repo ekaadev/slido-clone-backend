@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"slido-clone-backend/internal/delivery/http/middleware"
 	"slido-clone-backend/internal/delivery/websocket"
@@ -14,17 +15,19 @@ import (
 
 // PollController controller untuk Poll operations
 type PollController struct {
-	Log         *logrus.Logger
-	PollUseCase *usecase.PollUseCase
-	WSHub       *websocket.Hub
+	Log                *logrus.Logger
+	PollUseCase        *usecase.PollUseCase
+	ParticipantUseCase *usecase.ParticipantUseCase
+	WSHub              *websocket.Hub
 }
 
 // NewPollController create new instance of PollController
-func NewPollController(log *logrus.Logger, pollUseCase *usecase.PollUseCase, wsHub *websocket.Hub) *PollController {
+func NewPollController(log *logrus.Logger, pollUseCase *usecase.PollUseCase, participantUseCase *usecase.ParticipantUseCase, wsHub *websocket.Hub) *PollController {
 	return &PollController{
-		Log:         log,
-		PollUseCase: pollUseCase,
-		WSHub:       wsHub,
+		Log:                log,
+		PollUseCase:        pollUseCase,
+		ParticipantUseCase: participantUseCase,
+		WSHub:              wsHub,
 	}
 }
 
@@ -173,6 +176,9 @@ func (c *PollController) Vote(ctx *fiber.Ctx) error {
 	// broadcast ke websocket clients di room
 	c.broadcastPollVoted(*auth.RoomID, response)
 
+	// broadcast leaderboard update setelah user vote poll (karena dapat XP)
+	c.broadcastLeaderboardUpdate(*auth.RoomID, *auth.ParticipantID)
+
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
 		Data: response,
 	})
@@ -261,6 +267,33 @@ func (c *PollController) broadcastPollClosed(roomID uint, response *model.CloseP
 	data := websocket.WSMessage{
 		Event: websocket.EventPollClosed,
 		Data:  pollMustMarshalJSON(response),
+	}
+	c.WSHub.BroadcastToRoom(roomID, pollMustMarshalJSON(data))
+}
+
+// broadcastLeaderboardUpdate broadcast leaderboard setelah ada perubahan XP
+func (c *PollController) broadcastLeaderboardUpdate(roomID uint, participantID uint) {
+	if c.WSHub == nil || c.ParticipantUseCase == nil {
+		return
+	}
+
+	request := &model.GetLeaderboardRequest{
+		RoomID:        roomID,
+		ParticipantID: participantID,
+	}
+
+	leaderboard, err := c.ParticipantUseCase.Leaderboard(context.Background(), request)
+	if err != nil {
+		c.Log.Warnf("broadcastLeaderboardUpdate - error: %v", err)
+		return
+	}
+
+	data := websocket.WSMessage{
+		Event: websocket.EventLeaderboardUpdate,
+		Data: pollMustMarshalJSON(map[string]interface{}{
+			"leaderboard":        leaderboard,
+			"total_participants": leaderboard.TotalParticipants,
+		}),
 	}
 	c.WSHub.BroadcastToRoom(roomID, pollMustMarshalJSON(data))
 }

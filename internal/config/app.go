@@ -61,7 +61,7 @@ func Bootstrap(config *BootstrapConfig) {
 	participantController := http.NewParticipantController(config.Log, participantUseCase)
 	messageController := http.NewMessageController(config.Log, messageUseCase)
 	questionController := http.NewQuestionController(config.Log, questionUseCase, hub)
-	pollController := http.NewPollController(config.Log, pollUseCase, hub)
+	pollController := http.NewPollController(config.Log, pollUseCase, participantUseCase, hub)
 
 	// setup HTTP middleware
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
