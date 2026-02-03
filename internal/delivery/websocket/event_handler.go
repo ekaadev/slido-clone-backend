@@ -222,10 +222,15 @@ func (h *EventHandler) handleQuestionUpvote(client *Client, data json.RawMessage
 		return err
 	}
 
-	// broadcast question:upvoted ke semua client di room
+	// broadcast question:upvoted ke semua client di room dengan action dan participant_id
+	broadcastPayload := map[string]interface{}{
+		"question":       response.Question,
+		"participant_id": client.participantID,
+		"action":         "add",
+	}
 	broadcastData := WSMessage{
 		Event: EventQuestionUpvoted,
-		Data:  mustMarshal(response),
+		Data:  mustMarshal(broadcastPayload),
 	}
 	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
 	h.broadcastLeaderboardUpdate(client)
@@ -257,10 +262,15 @@ func (h *EventHandler) handleQuestionRemoveUpvote(client *Client, data json.RawM
 		return err
 	}
 
-	// broadcast question:upvoted (dengan updated count) ke semua client di room
+	// broadcast question:upvoted (dengan updated count) ke semua client di room dengan action dan participant_id
+	broadcastPayload := map[string]interface{}{
+		"question":       response.Question,
+		"participant_id": client.participantID,
+		"action":         "remove",
+	}
 	broadcastData := WSMessage{
 		Event: EventQuestionUpvoted,
-		Data:  mustMarshal(response),
+		Data:  mustMarshal(broadcastPayload),
 	}
 	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
 	h.broadcastLeaderboardUpdate(client)
