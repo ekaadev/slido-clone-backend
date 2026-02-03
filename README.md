@@ -86,11 +86,11 @@ Buat file config (bebas, bisa `.env` atau `config.json` tergantung implementasi 
 Contoh jika menggunakan environment variables:
 
 ```bash
-export DB_NAME=slido_clone
-export DB_USER=slido_user
-export DB_PASSWORD=password
-export DB_HOST=localhost
-export DB_PORT=3306
+DATABASE_USERNAME=slido_user
+DATABASE_PASSWORD=password
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_NAME=slido_clone
 ```
 
 ### 5. Run Application
