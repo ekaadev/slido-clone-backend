@@ -221,14 +221,23 @@ func (c *UserUseCase) Anon(ctx context.Context, request *model.AnonymousUserRequ
 		return nil, fiber.ErrInternalServerError
 	}
 
+	// Anonymous users are never room owners (always audience)
+	isRoomOwner := false
+
 	// create a token jwt for anonymous user
 	token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
 		ParticipantID: &participant.ID,
 		RoomID:        &roomExisting.ID,
 		DisplayName:   participant.DisplayName,
+		Role:          "anonymous",
 		IsAnonymous:   *participant.IsAnonymous,
+		IsRoomOwner:   isRoomOwner,
 	})
+	if err != nil {
+		c.Log.Errorf("Failed to create token: %+v", err)
+		return nil, fiber.ErrInternalServerError
+	}
 
-	// return and convert to join room response
-	return converter.ParticipantToJoinRoomResponse(participant, token), nil
+	// return and convert to join room response with role (always audience for anonymous)
+	return converter.ParticipantToJoinRoomResponseWithRole(participant, token, isRoomOwner), nil
 }

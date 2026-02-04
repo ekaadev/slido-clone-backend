@@ -16,6 +16,7 @@ type Auth struct {
 
 	// Flags
 	IsAnonymous bool `json:"is_anonymous"`
+	IsRoomOwner bool `json:"is_room_owner"` // true jika user adalah pembuat room (host)
 
 	// Standard claims
 	jwt.RegisteredClaims

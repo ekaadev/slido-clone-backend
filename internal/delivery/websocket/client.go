@@ -31,6 +31,7 @@ type Client struct {
 	roomID        uint // room yang dijoin
 	participantID uint // dari participant
 	isAnonymous   bool // anonymous
+	isRoomOwner   bool // true jika user adalah pembuat room (host)
 
 	// handler reference (untuk process events)
 	messageHandler func(*Client, []byte) error

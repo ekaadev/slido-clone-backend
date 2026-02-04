@@ -415,6 +415,11 @@ func mustMarshal(v interface{}) []byte {
 // Conference Handlers
 
 func (h *EventHandler) handleConferenceStart(client *Client) error {
+	// Authorization: Only room owner (host) can start conference
+	if !client.isRoomOwner {
+		return fmt.Errorf("unauthorized: only room owner can start conference")
+	}
+
 	peerID := fmt.Sprintf("%d", client.participantID)
 	room := h.sfuManager.GetRoom(client.roomID)
 
@@ -438,6 +443,11 @@ func (h *EventHandler) handleConferenceStart(client *Client) error {
 }
 
 func (h *EventHandler) handleConferenceStop(client *Client) error {
+	// Authorization: Only room owner (host) can stop conference
+	if !client.isRoomOwner {
+		return fmt.Errorf("unauthorized: only room owner can stop conference")
+	}
+
 	peerID := fmt.Sprintf("%d", client.participantID)
 	room := h.sfuManager.GetRoom(client.roomID)
 
@@ -458,24 +468,26 @@ func (h *EventHandler) handleConferenceJoin(client *Client) error {
 	peerID := fmt.Sprintf("%d", client.participantID)
 	room := h.sfuManager.GetRoom(client.roomID)
 
-	// Send current state to the joining client
+	// Send current state to the joining client (including their role info)
 	state := room.GetConferenceState()
 	stateData := WSMessage{
 		Event: EventConferenceState,
 		Data: mustMarshal(map[string]interface{}{
-			"host_id":      state.HostID,
-			"is_active":    state.IsActive,
-			"speakers":     state.Speakers,
-			"raised_hands": state.RaisedHands,
+			"host_id":       state.HostID,
+			"is_active":     state.IsActive,
+			"speakers":      state.Speakers,
+			"raised_hands":  state.RaisedHands,
+			"is_room_owner": client.isRoomOwner, // inform client their role
 		}),
 	}
 	client.send <- mustMarshal(stateData)
 
-	// Broadcast that someone joined
+	// Broadcast that someone joined (with their role info)
 	broadcastData := WSMessage{
 		Event: EventConferenceJoined,
 		Data: mustMarshal(map[string]interface{}{
 			"participant_id": peerID,
+			"is_room_owner":  client.isRoomOwner,
 		}),
 	}
 	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
@@ -532,6 +544,11 @@ func (h *EventHandler) handleLowerHand(client *Client) error {
 }
 
 func (h *EventHandler) handlePromoteSpeaker(client *Client, data json.RawMessage) error {
+	// Authorization: Only room owner (host) can promote speakers
+	if !client.isRoomOwner {
+		return fmt.Errorf("unauthorized: only room owner can promote speakers")
+	}
+
 	var payload struct {
 		ParticipantID string `json:"participant_id"`
 	}
@@ -558,6 +575,11 @@ func (h *EventHandler) handlePromoteSpeaker(client *Client, data json.RawMessage
 }
 
 func (h *EventHandler) handleDemoteSpeaker(client *Client, data json.RawMessage) error {
+	// Authorization: Only room owner (host) can demote speakers
+	if !client.isRoomOwner {
+		return fmt.Errorf("unauthorized: only room owner can demote speakers")
+	}
+
 	var payload struct {
 		ParticipantID string `json:"participant_id"`
 	}
