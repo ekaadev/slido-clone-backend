@@ -17,10 +17,35 @@ func ParticipantToResponse(participant *entity.Participant) *model.ParticipantRe
 	}
 }
 
+// ParticipantToResponseWithRole convert entity Participant to model ParticipantResponse with room role
+func ParticipantToResponseWithRole(participant *entity.Participant, isRoomOwner bool) *model.ParticipantResponse {
+	roomRole := "audience"
+	if isRoomOwner {
+		roomRole = "host"
+	}
+	return &model.ParticipantResponse{
+		ID:          participant.ID,
+		RoomID:      participant.RoomID,
+		DisplayName: participant.DisplayName,
+		XPScore:     participant.XPScore,
+		IsAnonymous: *participant.IsAnonymous,
+		RoomRole:    roomRole,
+		JoinedAt:    participant.JoinedAt,
+	}
+}
+
 // ParticipantToJoinRoomResponse convert entity Participant and token to model JoinRoomResponse
 func ParticipantToJoinRoomResponse(participant *entity.Participant, token string) *model.JoinRoomResponse {
 	return &model.JoinRoomResponse{
 		Participant: *ParticipantToResponse(participant),
+		Token:       token,
+	}
+}
+
+// ParticipantToJoinRoomResponseWithRole convert entity Participant and token to model JoinRoomResponse with room role
+func ParticipantToJoinRoomResponseWithRole(participant *entity.Participant, token string, isRoomOwner bool) *model.JoinRoomResponse {
+	return &model.JoinRoomResponse{
+		Participant: *ParticipantToResponseWithRole(participant, isRoomOwner),
 		Token:       token,
 	}
 }

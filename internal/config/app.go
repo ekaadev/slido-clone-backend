@@ -6,6 +6,7 @@ import (
 	"slido-clone-backend/internal/delivery/http/route"
 	"slido-clone-backend/internal/delivery/websocket"
 	"slido-clone-backend/internal/repository"
+	"slido-clone-backend/internal/sfu"
 	"slido-clone-backend/internal/usecase"
 	"slido-clone-backend/internal/util"
 
@@ -37,9 +38,6 @@ func Bootstrap(config *BootstrapConfig) {
 	questionRepository := repository.NewQuestionRepository(config.Log)
 	voteRepository := repository.NewVoteRepository(config.Log)
 	pollRepository := repository.NewPollRepository(config.Log)
-	pollOptionRepository := repository.NewPollOptionRepository(config.Log)
-	pollResponseRepository := repository.NewPollResponseRepository(config.Log)
-	activityRepository := repository.NewActivityRepository(config.Log)
 
 	// setup utils
 	tokenUtil := util.NewTokenUtil(config.Config.GetString("JWT_SECRET"), config.Redis)
@@ -51,8 +49,7 @@ func Bootstrap(config *BootstrapConfig) {
 	xpTransactionUseCase := usecase.NewXPTransactionUseCase(config.DB, config.Validator, config.Log, xpTransactionRepository, roomRepository)
 	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository, xpTransactionUseCase)
 	questionUseCase := usecase.NewQuestionUseCase(config.DB, config.Log, config.Validator, questionRepository, voteRepository, roomRepository, participantRepository, xpTransactionRepository)
-	pollUseCase := usecase.NewPollUseCase(config.DB, config.Log, config.Validator, pollRepository, pollOptionRepository, pollResponseRepository, roomRepository, xpTransactionRepository)
-	activityUseCase := usecase.NewActivityUseCase(config.DB, config.Log, config.Validator, activityRepository, roomRepository)
+	pollUseCase := usecase.NewPollUseCase(config.DB, config.Log, config.Validator, pollRepository, roomRepository, participantRepository, xpTransactionRepository)
 
 	// configuration websocket hub (sebelum controller yang membutuhkan hub)
 	hub := websocket.NewHub(config.Log)
@@ -64,30 +61,27 @@ func Bootstrap(config *BootstrapConfig) {
 	participantController := http.NewParticipantController(config.Log, participantUseCase)
 	messageController := http.NewMessageController(config.Log, messageUseCase)
 	questionController := http.NewQuestionController(config.Log, questionUseCase, hub)
-	pollController := http.NewPollController(config.Log, pollUseCase, hub)
-	xpTransactionController := http.NewXPTransactionController(config.Log, xpTransactionUseCase)
-	activityController := http.NewActivityController(config.Log, activityUseCase)
+	pollController := http.NewPollController(config.Log, pollUseCase, participantUseCase, hub)
 
 	// setup HTTP middleware
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
 
 	// websocket handler
-	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase, questionUseCase, pollUseCase)
+	sfuManager := sfu.NewSFUManager(config.Log)
+	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase, questionUseCase, sfuManager)
 	wsHandler := websocket.NewWebSocketHandler(hub, config.Log, tokenUtil, eventHandler)
 
 	// setup HTTP routes
 	routeConfig := route.RouteConfig{
-		App:                     config.App,
-		UserController:          userController,
-		RoomController:          roomController,
-		ParticipantController:   participantController,
-		MessageController:       messageController,
-		QuestionController:      questionController,
-		PollController:          pollController,
-		XPTransactionController: xpTransactionController,
-		ActivityController:      activityController,
-		AuthMiddleware:          authMiddleware,
-		WSHandler:               wsHandler,
+		App:                   config.App,
+		UserController:        userController,
+		RoomController:        roomController,
+		ParticipantController: participantController,
+		MessageController:     messageController,
+		QuestionController:    questionController,
+		PollController:        pollController,
+		AuthMiddleware:        authMiddleware,
+		WSHandler:             wsHandler,
 	}
 	routeConfig.Setup()
 }

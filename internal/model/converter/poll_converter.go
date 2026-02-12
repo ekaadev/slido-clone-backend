@@ -16,31 +16,45 @@ func PollOptionToResponse(option *entity.PollOption) model.PollOptionResponse {
 	}
 }
 
-// PollOptionToResponseWithPercentage convert dengan percentage
+// PollOptionToResponseWithPercentage convert entity PollOption dengan percentage
 func PollOptionToResponseWithPercentage(option *entity.PollOption, totalVotes int) model.PollOptionResponse {
-	percentage := 0.0
+	var percentage float64
 	if totalVotes > 0 {
 		percentage = float64(option.VoteCount) / float64(totalVotes) * 100
-		// round to 2 decimal places
+		// Round to 2 decimal places
 		percentage = float64(int(percentage*100)) / 100
 	}
 	return model.PollOptionResponse{
 		ID:         option.ID,
+		PollID:     option.PollID,
 		OptionText: option.OptionText,
 		VoteCount:  option.VoteCount,
-		Percentage: percentage,
 		Order:      option.Order,
+		Percentage: percentage,
 	}
 }
 
-// PollToResponse convert entity Poll to model PollResponse
-func PollToResponse(poll *entity.Poll) model.PollResponse {
-	options := make([]model.PollOptionResponse, len(poll.Options))
-	for i, opt := range poll.Options {
-		options[i] = PollOptionToResponse(&opt)
+// PollOptionsToResponse convert slice of PollOption to slice of PollOptionResponse
+func PollOptionsToResponse(options []entity.PollOption) []model.PollOptionResponse {
+	result := make([]model.PollOptionResponse, len(options))
+	for i, option := range options {
+		result[i] = PollOptionToResponse(&option)
 	}
+	return result
+}
 
-	return model.PollResponse{
+// PollOptionsToResponseWithPercentage convert slice of PollOption dengan percentage
+func PollOptionsToResponseWithPercentage(options []entity.PollOption, totalVotes int) []model.PollOptionResponse {
+	result := make([]model.PollOptionResponse, len(options))
+	for i, option := range options {
+		result[i] = PollOptionToResponseWithPercentage(&option, totalVotes)
+	}
+	return result
+}
+
+// PollToResponse convert entity Poll to model PollResponse
+func PollToResponse(poll *entity.Poll) *model.PollResponse {
+	return &model.PollResponse{
 		ID:          poll.ID,
 		RoomID:      poll.RoomID,
 		Question:    poll.Question,
@@ -48,41 +62,44 @@ func PollToResponse(poll *entity.Poll) model.PollResponse {
 		CreatedAt:   poll.CreatedAt,
 		ActivatedAt: poll.ActivatedAt,
 		ClosedAt:    poll.ClosedAt,
-		Options:     options,
+		Options:     PollOptionsToResponse(poll.Options),
 	}
 }
 
-// PollToResponseWithDetails convert dengan total votes dan voted info
-func PollToResponseWithDetails(poll *entity.Poll, totalVotes int, hasVoted bool, votedOption *uint) model.PollResponse {
-	options := make([]model.PollOptionResponse, len(poll.Options))
-	for i, opt := range poll.Options {
-		options[i] = PollOptionToResponseWithPercentage(&opt, totalVotes)
-	}
-
-	return model.PollResponse{
+// PollToResponseWithOptions convert entity Poll dengan options yang sudah ada
+func PollToResponseWithOptions(poll *entity.Poll, totalVotes int, hasVoted bool, myVoteID *uint) *model.PollResponse {
+	return &model.PollResponse{
 		ID:          poll.ID,
+		RoomID:      poll.RoomID,
 		Question:    poll.Question,
 		Status:      poll.Status,
 		TotalVotes:  totalVotes,
 		CreatedAt:   poll.CreatedAt,
 		ActivatedAt: poll.ActivatedAt,
 		ClosedAt:    poll.ClosedAt,
-		Options:     options,
+		Options:     PollOptionsToResponseWithPercentage(poll.Options, totalVotes),
 		HasVoted:    hasVoted,
-		VotedOption: votedOption,
+		MyVoteID:    myVoteID,
 	}
 }
 
-// PollToCreateResponse convert untuk create response
+// PollToCreateResponse convert untuk create poll response
 func PollToCreateResponse(poll *entity.Poll) *model.CreatePollResponse {
 	return &model.CreatePollResponse{
-		Poll: PollToResponse(poll),
+		Poll: model.PollResponse{
+			ID:        poll.ID,
+			RoomID:    poll.RoomID,
+			Question:  poll.Question,
+			Status:    poll.Status,
+			CreatedAt: poll.CreatedAt,
+			Options:   PollOptionsToResponse(poll.Options),
+		},
 	}
 }
 
-// PollResponseToVoteData convert entity PollResponse ke vote response data
-func PollResponseToVoteData(response *entity.PollResponse) model.PollVoteResponseData {
-	return model.PollVoteResponseData{
+// PollResponseToResponse convert entity PollResponse (vote) to model PollResponseResponse
+func PollResponseToResponse(response *entity.PollResponse) model.PollResponseResponse {
+	return model.PollResponseResponse{
 		ID:            response.ID,
 		PollID:        response.PollID,
 		ParticipantID: response.ParticipantID,
@@ -91,28 +108,60 @@ func PollResponseToVoteData(response *entity.PollResponse) model.PollVoteRespons
 	}
 }
 
-// PollOptionsToUpdatedResults convert options ke updated results
-func PollOptionsToUpdatedResults(pollID uint, options []entity.PollOption, totalVotes int) model.UpdatedResultsResponse {
-	optResponses := make([]model.PollOptionResponse, len(options))
-	for i, opt := range options {
-		optResponses[i] = PollOptionToResponseWithPercentage(&opt, totalVotes)
-	}
-
-	return model.UpdatedResultsResponse{
-		PollID:     pollID,
-		TotalVotes: totalVotes,
-		Options:    optResponses,
+// PollToVoteResponse convert untuk submit vote response
+func PollToVoteResponse(
+	response *entity.PollResponse,
+	poll *entity.Poll,
+	totalVotes int,
+	xpPoints int,
+	newTotal int,
+) *model.SubmitPollVoteResponse {
+	return &model.SubmitPollVoteResponse{
+		Response: PollResponseToResponse(response),
+		UpdatedResults: model.UpdatedPollResultsResponse{
+			PollID:     poll.ID,
+			TotalVotes: totalVotes,
+			Options:    PollOptionsToResponseWithPercentage(poll.Options, totalVotes),
+		},
+		XPEarned: &model.XPEarned{
+			Points:   xpPoints,
+			NewTotal: newTotal,
+		},
 	}
 }
 
-// PollToHistoryItem convert poll to history item
-func PollToHistoryItem(poll *entity.Poll, totalVotes int) model.PollHistoryItem {
-	return model.PollHistoryItem{
-		ID:         poll.ID,
-		Question:   poll.Question,
-		Status:     poll.Status,
+// PollToCloseResponse convert untuk close poll response
+func PollToCloseResponse(poll *entity.Poll, totalVotes int) *model.ClosePollResponse {
+	response := &model.ClosePollResponse{}
+	response.Poll.ID = poll.ID
+	response.Poll.Status = poll.Status
+	response.Poll.ClosedAt = poll.ClosedAt
+	response.Poll.FinalResults = model.FinalPollResultsResponse{
 		TotalVotes: totalVotes,
-		CreatedAt:  poll.CreatedAt,
-		ClosedAt:   poll.ClosedAt,
+		Options:    PollOptionsToResponseWithPercentage(poll.Options, totalVotes),
+	}
+	return response
+}
+
+// PollsToHistoryResponse convert untuk poll history response
+func PollsToHistoryResponse(polls []entity.Poll, total int64) *model.PollHistoryResponse {
+	result := make([]model.PollResponse, len(polls))
+	for i, poll := range polls {
+		totalVotes := 0
+		for _, opt := range poll.Options {
+			totalVotes += opt.VoteCount
+		}
+		result[i] = model.PollResponse{
+			ID:         poll.ID,
+			Question:   poll.Question,
+			Status:     poll.Status,
+			TotalVotes: totalVotes,
+			CreatedAt:  poll.CreatedAt,
+			ClosedAt:   poll.ClosedAt,
+		}
+	}
+	return &model.PollHistoryResponse{
+		Polls: result,
+		Total: total,
 	}
 }

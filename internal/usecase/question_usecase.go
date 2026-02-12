@@ -248,11 +248,8 @@ func (c *QuestionUseCase) Upvote(ctx context.Context, request *model.UpvoteReque
 		return nil, fiber.ErrInternalServerError
 	}
 
-	// increment upvote count
-	if err = c.QuestionRepository.IncrementUpvoteCount(tx, request.QuestionID); err != nil {
-		c.Log.Errorf("Upvote - IncrementUpvoteCount error: %v", err)
-		return nil, fiber.ErrInternalServerError
-	}
+	// NOTE: upvote_count increment sudah di-handle oleh database trigger (after_vote_insert)
+	// Jangan manual increment disini untuk menghindari double increment
 
 	// add XP to question owner (recipient)
 	xpTx := &entity.XPTransaction{
@@ -318,11 +315,8 @@ func (c *QuestionUseCase) RemoveUpvote(ctx context.Context, request *model.Upvot
 		return nil, fiber.ErrInternalServerError
 	}
 
-	// decrement upvote count
-	if err = c.QuestionRepository.DecrementUpvoteCount(tx, request.QuestionID); err != nil {
-		c.Log.Errorf("RemoveUpvote - DecrementUpvoteCount error: %v", err)
-		return nil, fiber.ErrInternalServerError
-	}
+	// NOTE: upvote_count decrement sudah di-handle oleh database trigger (after_vote_delete)
+	// Jangan manual decrement disini untuk menghindari double decrement
 
 	// remove XP from question owner (optional: bisa diabaikan untuk simplifikasi)
 	if err = c.XPTransactionRepository.AddXP(tx, question.ParticipantID, -XPReceiveUpvote); err != nil {
