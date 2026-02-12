@@ -8,17 +8,15 @@ import (
 )
 
 type RouteConfig struct {
-	App                     *fiber.App
-	UserController          *http.UserController
-	RoomController          *http.RoomController
-	ParticipantController   *http.ParticipantController
-	MessageController       *http.MessageController
-	QuestionController      *http.QuestionController
-	PollController          *http.PollController
-	XPTransactionController *http.XPTransactionController
-	ActivityController      *http.ActivityController
-	AuthMiddleware          fiber.Handler
-	WSHandler               *websocket.WebSocketHandler
+	App                   *fiber.App
+	UserController        *http.UserController
+	RoomController        *http.RoomController
+	ParticipantController *http.ParticipantController
+	MessageController     *http.MessageController
+	QuestionController    *http.QuestionController
+	PollController        *http.PollController
+	AuthMiddleware        fiber.Handler
+	WSHandler             *websocket.WebSocketHandler
 }
 
 // Setup running all route setup here
@@ -81,6 +79,6 @@ func (c *RouteConfig) SetupAuthRoute() {
 	c.App.Post("/api/v1/rooms/:room_id/polls", c.PollController.Create)
 	c.App.Get("/api/v1/rooms/:room_id/polls/active", c.PollController.GetActive)
 	c.App.Get("/api/v1/rooms/:room_id/polls", c.PollController.GetHistory)
-	c.App.Post("/api/v1/polls/:poll_id/vote", c.PollController.SubmitVote)
+	c.App.Post("/api/v1/polls/:poll_id/vote", c.PollController.Vote)
 	c.App.Patch("/api/v1/polls/:poll_id/close", c.PollController.Close)
 }

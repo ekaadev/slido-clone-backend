@@ -87,20 +87,21 @@ func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRe
 
 	// if participant already joined, return existing participant
 	if participantExisting != nil {
-		c.Log.Warnf("Participant already joined room with room code: %s", request.RoomCode)
+		c.Log.Infof("Participant already joined room with room code: %s", request.RoomCode)
 
 		if err = tx.Commit().Error; err != nil {
 			c.Log.Warnf("Failed to commit transaction: %+v", err)
 			return nil, fiber.ErrInternalServerError
 		}
 
-		// Determine role based on presenter status
+		// Determine role based on room ownership (presenter_id)
+		isRoomOwner := roomExisting.PresenterID == userExisting.ID
 		role := "participant"
-		if roomExisting.PresenterID == userExisting.ID {
-			role = "presenter"
+		if isRoomOwner {
+			role = "presenter" // role in JWT for permission check
 		}
 
-		// Generate new token
+		// Generate new token with room context
 		token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
 			UserID:        &userExisting.ID,
 			ParticipantID: &participantExisting.ID,
@@ -110,13 +111,14 @@ func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRe
 			Email:         userExisting.Email,
 			Role:          role,
 			IsAnonymous:   *participantExisting.IsAnonymous,
+			IsRoomOwner:   isRoomOwner,
 		})
 		if err != nil {
 			c.Log.Warnf("Failed to create token: %+v", err)
 			return nil, fiber.ErrInternalServerError
 		}
 
-		return converter.ParticipantToJoinRoomResponse(participantExisting, token), nil
+		return converter.ParticipantToJoinRoomResponseWithRole(participantExisting, token, isRoomOwner), nil
 	}
 
 	anon := false
@@ -145,7 +147,14 @@ func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRe
 		return nil, fiber.ErrInternalServerError
 	}
 
-	// generate new token (update jwt token)
+	// Determine if user is room owner (pembuat room)
+	isRoomOwner := roomExisting.PresenterID == userExisting.ID
+	role := "participant"
+	if isRoomOwner {
+		role = "presenter" // role in JWT for permission check
+	}
+
+	// generate new token (update jwt token with room context)
 	token, err := c.TokenUtil.CreateToken(ctx, &model.Auth{
 		UserID:        &userExisting.ID,
 		ParticipantID: &participant.ID,
@@ -153,16 +162,17 @@ func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRe
 		Username:      userExisting.Username,
 		DisplayName:   participant.DisplayName,
 		Email:         userExisting.Email,
-		Role:          "participant",
+		Role:          role,
 		IsAnonymous:   *participant.IsAnonymous,
+		IsRoomOwner:   isRoomOwner,
 	})
 	if err != nil {
 		c.Log.Warnf("Failed to create token: %+v", err)
 		return nil, fiber.ErrInternalServerError
 	}
 
-	// return response
-	return converter.ParticipantToJoinRoomResponse(participant, token), nil
+	// return response with room role
+	return converter.ParticipantToJoinRoomResponseWithRole(participant, token, isRoomOwner), nil
 }
 
 // List usecase digunakan untuk mencari participant dalam room

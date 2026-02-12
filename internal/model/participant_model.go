@@ -16,6 +16,7 @@ type ParticipantResponse struct {
 	DisplayName string    `json:"display_name"`
 	XPScore     int       `json:"xp_score"`
 	IsAnonymous bool      `json:"is_anonymous"`
+	RoomRole    string    `json:"room_role,omitempty"` // "host" atau "audience"
 	JoinedAt    time.Time `json:"joined_at,omitempty"`
 }
 
