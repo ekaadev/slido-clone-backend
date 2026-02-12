@@ -46,7 +46,7 @@ func Bootstrap(config *BootstrapConfig) {
 	userUseCase := usecase.NewUserUseCase(config.DB, config.Log, config.Validator, userRepository, participantRepository, roomRepository, tokenUtil)
 	roomUseCase := usecase.NewRoomUseCase(config.DB, config.Log, config.Validator, roomRepository, participantRepository)
 	participantUseCase := usecase.NewParticipantUseCase(config.DB, config.Log, config.Validator, participantRepository, roomRepository, userRepository, tokenUtil)
-	xpTransactionUseCase := usecase.NewXPTransactionUseCase(config.DB, config.Validator, config.Log, xpTransactionRepository)
+	xpTransactionUseCase := usecase.NewXPTransactionUseCase(config.DB, config.Validator, config.Log, xpTransactionRepository, roomRepository)
 	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository, xpTransactionUseCase)
 	questionUseCase := usecase.NewQuestionUseCase(config.DB, config.Log, config.Validator, questionRepository, voteRepository, roomRepository, participantRepository, xpTransactionRepository)
 	pollUseCase := usecase.NewPollUseCase(config.DB, config.Log, config.Validator, pollRepository, roomRepository, participantRepository, xpTransactionRepository)
@@ -57,7 +57,7 @@ func Bootstrap(config *BootstrapConfig) {
 
 	// setup HTTP controllers
 	userController := http.NewUserController(config.Log, userUseCase)
-	roomController := http.NewRoomController(config.Log, roomUseCase, tokenUtil)
+	roomController := http.NewRoomController(config.Log, roomUseCase, tokenUtil, hub)
 	participantController := http.NewParticipantController(config.Log, participantUseCase)
 	messageController := http.NewMessageController(config.Log, messageUseCase)
 	questionController := http.NewQuestionController(config.Log, questionUseCase, hub)

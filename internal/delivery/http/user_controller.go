@@ -3,6 +3,7 @@ package http
 import (
 	"slido-clone-backend/internal/model"
 	"slido-clone-backend/internal/usecase"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -91,5 +92,33 @@ func (c *UserController) Anon(ctx *fiber.Ctx) error {
 	// return response
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
 		Data: response,
+	})
+}
+
+// Logout handler untuk logout user dan invalidate token
+func (c *UserController) Logout(ctx *fiber.Ctx) error {
+	// extract token from Authorization header
+	authHeader := ctx.Get("Authorization")
+	if authHeader == "" {
+		return fiber.ErrUnauthorized
+	}
+
+	// remove "Bearer " prefix
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenString == authHeader {
+		// no Bearer prefix found
+		return fiber.ErrUnauthorized
+	}
+
+	// call usecase to logout
+	if err := c.UserUseCase.Logout(ctx.UserContext(), tokenString); err != nil {
+		c.Log.Warnf("Logout failed: %s", err)
+		return err
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
+		Data: map[string]string{
+			"message": "Successfully logged out",
+		},
 	})
 }

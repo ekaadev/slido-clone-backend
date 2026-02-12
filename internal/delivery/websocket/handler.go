@@ -66,6 +66,7 @@ func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
 			userID:         getUintValue(claims.UserID),
 			roomID:         getUintValue(claims.RoomID),
 			participantID:  getUintValue(claims.ParticipantID),
+			displayName:    claims.DisplayName,
 			isAnonymous:    claims.IsAnonymous,
 			isRoomOwner:    claims.IsRoomOwner,
 			messageHandler: wsh.eventHandler.HandleMessage,

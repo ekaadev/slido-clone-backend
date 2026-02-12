@@ -89,3 +89,13 @@ func (t *TokenUtil) ParseToken(ctx context.Context, tokenString string) (*model.
 
 	return claims, nil
 }
+
+// InvalidateToken removes the token from Redis to effectively log out the user
+func (t *TokenUtil) InvalidateToken(ctx context.Context, tokenString string) error {
+	// delete token from redis
+	_, err := t.Redis.Del(ctx, tokenString).Result()
+	if err != nil {
+		return err
+	}
+	return nil
+}

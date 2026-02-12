@@ -14,6 +14,7 @@ const (
 	EventRoomUserJoin = "room:user_joined"
 	EventRoomUserLeft = "room:user_left"
 	EventRoomClosed   = "room:closed"
+	EventRoomAnnounce = "room:announce" // Server -> Client (broadcast from presenter)
 
 	// Message events
 	EventMessageSend = "message:send" // Client -> Server
@@ -29,9 +30,10 @@ const (
 	EventQuestionValidated    = "question:validated"     // Server -> Client (broadcast)
 
 	// Poll events
-	EventPollCreated       = "poll:created"
-	EventPollResultsUpdate = "poll:results_updated"
-	EventPollClosed        = "poll:closed"
+	EventPollVote          = "poll:vote"            // Client -> Server
+	EventPollCreated       = "poll:created"         // Server -> Client (broadcast)
+	EventPollResultsUpdate = "poll:results_updated" // Server -> Client (broadcast)
+	EventPollClosed        = "poll:closed"          // Server -> Client (broadcast)
 
 	// Leaderboard events
 	EventLeaderboardUpdate  = "leaderboard:updated" // Server -> Client

@@ -80,3 +80,16 @@ type UpdateToCloseRoom struct {
 type SearchRoomsRequest struct {
 	PresenterID uint `json:"-" validate:"required,min=1"`
 }
+
+// DeleteRoomRequest request untuk delete room
+type DeleteRoomRequest struct {
+	PresenterID uint `json:"-" validate:"required,min=1"`
+	RoomID      uint `json:"-" validate:"required,min=1"`
+}
+
+// SendAnnouncementRequest request untuk mengirim announcement ke room
+type SendAnnouncementRequest struct {
+	PresenterID uint   `json:"-" validate:"required,min=1"`
+	RoomID      uint   `json:"-" validate:"required,min=1"`
+	Message     string `json:"message" validate:"required,min=1,max=1000"`
+}

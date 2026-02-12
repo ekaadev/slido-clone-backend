@@ -277,6 +277,43 @@ func (h *EventHandler) handleQuestionRemoveUpvote(client *Client, data json.RawM
 	return nil
 }
 
+// handlePollVote handle poll vote via websocket
+func (h *EventHandler) handlePollVote(client *Client, data json.RawMessage) error {
+	// parse payload
+	var payload struct {
+		PollID   uint `json:"poll_id"`
+		OptionID uint `json:"option_id"`
+	}
+	if err := json.Unmarshal(data, &payload); err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to parse poll vote payload")
+		return err
+	}
+
+	// create request untuk usecase
+	request := &model.SubmitVoteRequest{
+		PollID:        payload.PollID,
+		ParticipantID: client.participantID,
+		RoomID:        client.roomID,
+		OptionID:      payload.OptionID,
+	}
+
+	// call usecase
+	response, err := h.pollUseCase.SubmitVote(context.Background(), request)
+	if err != nil {
+		client.hub.log.WithField("error", err).Warn("failed to submit poll vote")
+		return err
+	}
+
+	// broadcast poll:results_updated ke semua client di room
+	broadcastData := WSMessage{
+		Event: EventPollResultsUpdate,
+		Data:  mustMarshal(response.UpdatedResults),
+	}
+	client.hub.BroadcastToRoom(client.roomID, mustMarshal(broadcastData))
+	h.broadcastLeaderboardUpdate(client)
+	return nil
+}
+
 func (h *EventHandler) broadcastLeaderboardUpdate(client *Client) {
 	request := &model.GetLeaderboardRequest{
 		RoomID:        client.roomID,
