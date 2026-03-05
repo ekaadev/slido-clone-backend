@@ -10,7 +10,7 @@ import "time"
 type CreatePollRequest struct {
 	RoomID      uint     `json:"-" validate:"required,min=1"`
 	PresenterID uint     `json:"-" validate:"required,min=1"`
-	Question    string   `json:"question" validate:"required,min=1,max=500"`
+	Question    string   `json:"question" validate:"required,min=3,max=500"`
 	Options     []string `json:"options" validate:"required,min=2,max=10,dive,min=1,max=255"`
 }
 

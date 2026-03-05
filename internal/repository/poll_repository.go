@@ -3,7 +3,6 @@ package repository
 import (
 	"errors"
 	"slido-clone-backend/internal/entity"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"

@@ -16,14 +16,16 @@ type EventHandler struct {
 	messageUseCase     *usecase.MessageUseCase
 	participantUseCase *usecase.ParticipantUseCase
 	questionUseCase    *usecase.QuestionUseCase
+	pollUseCase        *usecase.PollUseCase
 	sfuManager         *sfu.SFUManager
 }
 
-func NewEventHandler(messageUseCase *usecase.MessageUseCase, participantUseCase *usecase.ParticipantUseCase, questionUseCase *usecase.QuestionUseCase, sfuManager *sfu.SFUManager) *EventHandler {
+func NewEventHandler(messageUseCase *usecase.MessageUseCase, participantUseCase *usecase.ParticipantUseCase, questionUseCase *usecase.QuestionUseCase, pollUseCase *usecase.PollUseCase, sfuManager *sfu.SFUManager) *EventHandler {
 	return &EventHandler{
 		messageUseCase:     messageUseCase,
 		participantUseCase: participantUseCase,
 		questionUseCase:    questionUseCase,
+		pollUseCase:        pollUseCase,
 		sfuManager:         sfuManager,
 	}
 }
@@ -290,7 +292,7 @@ func (h *EventHandler) handlePollVote(client *Client, data json.RawMessage) erro
 	}
 
 	// create request untuk usecase
-	request := &model.SubmitVoteRequest{
+	request := &model.SubmitPollVoteRequest{
 		PollID:        payload.PollID,
 		ParticipantID: client.participantID,
 		RoomID:        client.roomID,
@@ -298,7 +300,7 @@ func (h *EventHandler) handlePollVote(client *Client, data json.RawMessage) erro
 	}
 
 	// call usecase
-	response, err := h.pollUseCase.SubmitVote(context.Background(), request)
+	response, err := h.pollUseCase.Vote(context.Background(), request)
 	if err != nil {
 		client.hub.log.WithField("error", err).Warn("failed to submit poll vote")
 		return err

@@ -38,6 +38,7 @@ func Bootstrap(config *BootstrapConfig) {
 	questionRepository := repository.NewQuestionRepository(config.Log)
 	voteRepository := repository.NewVoteRepository(config.Log)
 	pollRepository := repository.NewPollRepository(config.Log)
+	activityRepository := repository.NewActivityRepository(config.Log)
 
 	// setup utils
 	tokenUtil := util.NewTokenUtil(config.Config.GetString("JWT_SECRET"), config.Redis)
@@ -50,6 +51,7 @@ func Bootstrap(config *BootstrapConfig) {
 	messageUseCase := usecase.NewMessageUseCase(config.DB, config.Validator, config.Log, messageRepository, roomRepository, participantRepository, xpTransactionUseCase)
 	questionUseCase := usecase.NewQuestionUseCase(config.DB, config.Log, config.Validator, questionRepository, voteRepository, roomRepository, participantRepository, xpTransactionRepository)
 	pollUseCase := usecase.NewPollUseCase(config.DB, config.Log, config.Validator, pollRepository, roomRepository, participantRepository, xpTransactionRepository)
+	activityUseCase := usecase.NewActivityUseCase(config.DB, config.Log, config.Validator, activityRepository, roomRepository)
 
 	// configuration websocket hub (sebelum controller yang membutuhkan hub)
 	hub := websocket.NewHub(config.Log)
@@ -62,26 +64,30 @@ func Bootstrap(config *BootstrapConfig) {
 	messageController := http.NewMessageController(config.Log, messageUseCase)
 	questionController := http.NewQuestionController(config.Log, questionUseCase, hub)
 	pollController := http.NewPollController(config.Log, pollUseCase, participantUseCase, hub)
+	xpTransactionController := http.NewXPTransactionController(config.Log, xpTransactionUseCase)
+	activityController := http.NewActivityController(config.Log, activityUseCase)
 
 	// setup HTTP middleware
 	authMiddleware := middleware.NewAuth(userUseCase, tokenUtil)
 
 	// websocket handler
 	sfuManager := sfu.NewSFUManager(config.Log)
-	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase, questionUseCase, sfuManager)
+	eventHandler := websocket.NewEventHandler(messageUseCase, participantUseCase, questionUseCase, pollUseCase, sfuManager)
 	wsHandler := websocket.NewWebSocketHandler(hub, config.Log, tokenUtil, eventHandler)
 
 	// setup HTTP routes
 	routeConfig := route.RouteConfig{
-		App:                   config.App,
-		UserController:        userController,
-		RoomController:        roomController,
-		ParticipantController: participantController,
-		MessageController:     messageController,
-		QuestionController:    questionController,
-		PollController:        pollController,
-		AuthMiddleware:        authMiddleware,
-		WSHandler:             wsHandler,
+		App:                     config.App,
+		UserController:          userController,
+		RoomController:          roomController,
+		ParticipantController:   participantController,
+		MessageController:       messageController,
+		QuestionController:      questionController,
+		PollController:          pollController,
+		XPTransactionController: xpTransactionController,
+		ActivityController:      activityController,
+		AuthMiddleware:          authMiddleware,
+		WSHandler:               wsHandler,
 	}
 	routeConfig.Setup()
 }

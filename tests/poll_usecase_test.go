@@ -85,12 +85,12 @@ func TestSubmitVoteRequest_Validation(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		request model.SubmitVoteRequest
+		request model.SubmitPollVoteRequest
 		wantErr bool
 	}{
 		{
 			name: "valid request",
-			request: model.SubmitVoteRequest{
+			request: model.SubmitPollVoteRequest{
 				PollID:        1,
 				ParticipantID: 1,
 				RoomID:        1,
@@ -100,7 +100,7 @@ func TestSubmitVoteRequest_Validation(t *testing.T) {
 		},
 		{
 			name: "poll_id zero",
-			request: model.SubmitVoteRequest{
+			request: model.SubmitPollVoteRequest{
 				PollID:        0,
 				ParticipantID: 1,
 				RoomID:        1,
@@ -110,7 +110,7 @@ func TestSubmitVoteRequest_Validation(t *testing.T) {
 		},
 		{
 			name: "option_id zero",
-			request: model.SubmitVoteRequest{
+			request: model.SubmitPollVoteRequest{
 				PollID:        1,
 				ParticipantID: 1,
 				RoomID:        1,

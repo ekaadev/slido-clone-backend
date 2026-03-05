@@ -8,15 +8,17 @@ import (
 )
 
 type RouteConfig struct {
-	App                   *fiber.App
-	UserController        *http.UserController
-	RoomController        *http.RoomController
-	ParticipantController *http.ParticipantController
-	MessageController     *http.MessageController
-	QuestionController    *http.QuestionController
-	PollController        *http.PollController
-	AuthMiddleware        fiber.Handler
-	WSHandler             *websocket.WebSocketHandler
+	App                     *fiber.App
+	UserController          *http.UserController
+	RoomController          *http.RoomController
+	ParticipantController   *http.ParticipantController
+	MessageController       *http.MessageController
+	QuestionController      *http.QuestionController
+	PollController          *http.PollController
+	XPTransactionController *http.XPTransactionController
+	ActivityController      *http.ActivityController
+	AuthMiddleware          fiber.Handler
+	WSHandler               *websocket.WebSocketHandler
 }
 
 // Setup running all route setup here
