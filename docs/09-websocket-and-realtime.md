@@ -78,8 +78,7 @@ All WebSocket messages are JSON:
 | `question:upvote` | Client → Server | Upvote a question via WebSocket |
 | `question:remove_upvote` | Client → Server | Remove upvote via WebSocket |
 | `question:upvoted` | Server → Client | Broadcast updated upvote count |
-| `question:validate` | Client → Server | Presenter validates a question via WebSocket |
-| `question:validated` | Server → Client | Broadcast when a question is validated |
+| `question:validated` | Server → Client | Broadcast when a question is validated (via HTTP PATCH /api/v1/questions/:id/validate) |
 
 ### Poll Events
 | Event | Direction | Description |

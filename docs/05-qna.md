@@ -89,7 +89,6 @@ The core feature for quality interaction. Designed as a structured forum for aud
 | `question:upvote` | Client → Server | `{ questionID: uint }` |
 | `question:remove_upvote` | Client → Server | `{ questionID: uint }` |
 | `question:upvoted` | Server → Client | `{ id, upvoteCount }` |
-| `question:validate` | Client → Server | `{ questionID, status }` |
 | `question:validated` | Server → Client | `{ id, status, isValidatedByPresenter }` |
 
 ## XP Logic

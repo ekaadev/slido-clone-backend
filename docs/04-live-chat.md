@@ -2,9 +2,9 @@
 
 ## Overview
 
-A public discussion space where all room participants (audience and presenter) can interact informally. Designed for quick reactions, atmosphere building, and general discussion. Chat participation does NOT affect XP score — the gamification system is intentionally limited to the Q&A feature to maintain focus on quality contributions.
+A public discussion space where all room participants (audience and presenter) can interact informally. Designed for quick reactions, atmosphere building, and general discussion.
 
-Note: According to the rules file, chat does not award XP. However, the current code awards 1 XP per message via `XPTransactionUseCase.AddXPForMessage`. This may be subject to change.
+Chat awards **+1 XP per message** to encourage participation, but this is intentionally kept minimal compared to Q&A rewards (10 XP for submitting questions, 3 XP per upvote received, 25 XP for presenter validation) to maintain focus on quality contributions rather than chat volume.
 
 ## Architecture
 
