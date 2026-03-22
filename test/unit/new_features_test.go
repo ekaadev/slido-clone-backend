@@ -1,4 +1,4 @@
-package tests
+package unit
 
 import (
 	"slido-clone-backend/internal/model"

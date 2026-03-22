@@ -173,6 +173,12 @@ func (c *QuestionController) RemoveUpvote(ctx *fiber.Ctx) error {
 func (c *QuestionController) Validate(ctx *fiber.Ctx) error {
 	auth := middleware.GetUser(ctx)
 
+	// only the room presenter can validate questions
+	if !auth.IsRoomOwner {
+		c.Log.Warnf("Validate - User is not room owner")
+		return fiber.ErrForbidden
+	}
+
 	// parse question_id from params
 	questionIDStr := ctx.Params("question_id")
 	questionIDUint64, err := strconv.ParseUint(questionIDStr, 10, 64)

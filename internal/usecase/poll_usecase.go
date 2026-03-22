@@ -277,7 +277,7 @@ func (c *PollUseCase) Vote(ctx context.Context, request *model.SubmitPollVoteReq
 	}
 	if existingResponse != nil {
 		c.Log.Warnf("Vote - Participant %d already voted on poll %d", request.ParticipantID, request.PollID)
-		return nil, fiber.NewError(fiber.StatusBadRequest, "Already voted")
+		return nil, fiber.NewError(fiber.StatusConflict, "Already voted")
 	}
 
 	// create poll response

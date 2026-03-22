@@ -1,8 +1,8 @@
-package tests
+package unit
 
 import (
 	"slido-clone-backend/internal/model"
-	"slido-clone-backend/tests/mocks"
+	"slido-clone-backend/test/mocks"
 	"testing"
 
 	"github.com/go-playground/validator/v10"

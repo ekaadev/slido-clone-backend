@@ -1,4 +1,4 @@
-package tests
+package unit
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"slido-clone-backend/internal/model"
 	"slido-clone-backend/internal/repository"
 	"slido-clone-backend/internal/usecase"
-	"slido-clone-backend/tests/mocks"
+	"slido-clone-backend/test/mocks"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -25,9 +25,9 @@ func setupMessageUseCaseTest(t *testing.T) (*usecase.MessageUseCase, sqlmock.Sql
 	assert.NoError(t, err)
 
 	// create gorm db
-	dialector := mysql.New(mysql.Config{
-		Conn:                      db,
-		SkipInitializeWithVersion: true,
+	dialector := postgres.New(postgres.Config{
+		Conn:                 db,
+		PreferSimpleProtocol: true,
 	})
 	gormDB, err := gorm.Open(dialector, &gorm.Config{})
 	assert.NoError(t, err)

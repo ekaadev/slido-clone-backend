@@ -61,6 +61,7 @@ func (c *RoomController) Create(ctx *fiber.Ctx) error {
 		Email:         auth.Email,
 		Role:          "presenter",
 		IsAnonymous:   false,
+		IsRoomOwner:   true,
 	})
 	if err != nil {
 		c.Log.Warnf("Failed to create token: %s", err)
