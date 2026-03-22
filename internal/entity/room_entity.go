@@ -7,7 +7,7 @@ type Room struct {
 	RoomCode    string     `gorm:"column:room_code;type:varchar(20);uniqueIndex;not null"`
 	Title       string     `gorm:"column:title;type:varchar(255);not null"`
 	PresenterID uint       `gorm:"column:presenter_id;not null;index"`
-	Status      string     `gorm:"column:status;type:enum('active','closed');default:'active';not null;index"`
+	Status      string     `gorm:"column:status;type:varchar(10);default:'active';not null;index"`
 	CreatedAt   time.Time  `gorm:"column:created_at;autoCreateTime;not null;index:idx_rooms_created_at"`
 	ClosedAt    *time.Time `gorm:"column:closed_at"`
 

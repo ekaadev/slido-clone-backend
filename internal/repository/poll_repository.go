@@ -36,7 +36,7 @@ func (r *PollRepository) GetActivePollsByRoomID(db *gorm.DB, roomID uint) ([]ent
 	var polls []entity.Poll
 	err := db.Where("room_id = ? AND status = ?", roomID, "active").
 		Preload("Options", func(db *gorm.DB) *gorm.DB {
-			return db.Order("poll_options.`order` ASC")
+			return db.Order("poll_options.\"order\" ASC")
 		}).
 		Order("created_at DESC").
 		Find(&polls).Error
@@ -60,7 +60,7 @@ func (r *PollRepository) GetPollsByRoomID(db *gorm.DB, roomID uint, status strin
 
 	err := query.
 		Preload("Options", func(db *gorm.DB) *gorm.DB {
-			return db.Order("poll_options.`order` ASC")
+			return db.Order("poll_options.\"order\" ASC")
 		}).
 		Order("created_at DESC").
 		Limit(limit).
@@ -74,7 +74,7 @@ func (r *PollRepository) GetPollByIDWithOptions(db *gorm.DB, pollID uint) (*enti
 	var poll entity.Poll
 	err := db.Where("id = ?", pollID).
 		Preload("Options", func(db *gorm.DB) *gorm.DB {
-			return db.Order("poll_options.`order` ASC")
+			return db.Order("poll_options.\"order\" ASC")
 		}).
 		First(&poll).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

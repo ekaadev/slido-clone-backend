@@ -1,14 +1,14 @@
 CREATE TABLE messages (
-                          id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                          room_id BIGINT UNSIGNED NOT NULL,
-                          participant_id BIGINT UNSIGNED NOT NULL,
-                          content TEXT NOT NULL,
-                          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id BIGSERIAL PRIMARY KEY,
+    room_id BIGINT NOT NULL,
+    participant_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-                          FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
-                          FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_messages_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+    CONSTRAINT fk_messages_participant FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE
+);
 
-                          INDEX idx_messages_room (room_id),
-                          INDEX idx_messages_participant (participant_id),
-                          INDEX idx_messages_room_created (room_id, created_at DESC)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE INDEX idx_messages_room ON messages (room_id);
+CREATE INDEX idx_messages_participant ON messages (participant_id);
+CREATE INDEX idx_messages_room_created ON messages (room_id, created_at DESC);

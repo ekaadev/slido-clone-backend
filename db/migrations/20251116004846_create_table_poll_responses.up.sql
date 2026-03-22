@@ -1,18 +1,17 @@
 CREATE TABLE poll_responses (
-                                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                                poll_id BIGINT UNSIGNED NOT NULL,
-                                participant_id BIGINT UNSIGNED NOT NULL,
-                                poll_option_id BIGINT UNSIGNED NOT NULL,
-                                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id BIGSERIAL PRIMARY KEY,
+    poll_id BIGINT NOT NULL,
+    participant_id BIGINT NOT NULL,
+    poll_option_id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-                                FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
-                                FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE,
-                                FOREIGN KEY (poll_option_id) REFERENCES poll_options(id) ON DELETE CASCADE,
+    CONSTRAINT fk_poll_responses_poll FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
+    CONSTRAINT fk_poll_responses_participant FOREIGN KEY (participant_id) REFERENCES participants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_poll_responses_option FOREIGN KEY (poll_option_id) REFERENCES poll_options(id) ON DELETE CASCADE,
+    CONSTRAINT unique_poll_response UNIQUE (poll_id, participant_id)
+);
 
-                                UNIQUE KEY unique_poll_response (poll_id, participant_id),
-
-                                INDEX idx_poll_responses_poll (poll_id),
-                                INDEX idx_poll_responses_participant (participant_id),
-                                INDEX idx_poll_responses_option (poll_option_id),
-                                INDEX idx_poll_responses_created_at (created_at DESC)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE INDEX idx_poll_responses_poll ON poll_responses (poll_id);
+CREATE INDEX idx_poll_responses_participant ON poll_responses (participant_id);
+CREATE INDEX idx_poll_responses_option ON poll_responses (poll_option_id);
+CREATE INDEX idx_poll_responses_created_at ON poll_responses (created_at DESC);
