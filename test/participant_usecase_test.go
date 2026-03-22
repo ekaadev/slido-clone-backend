@@ -1,4 +1,4 @@
-package tests
+package test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"slido-clone-backend/internal/repository"
 	"slido-clone-backend/internal/usecase"
 	"slido-clone-backend/internal/util"
-	"slido-clone-backend/tests/mocks"
+	"slido-clone-backend/test/mocks"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
