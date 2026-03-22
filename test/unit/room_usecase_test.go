@@ -1,4 +1,4 @@
-package test
+package unit
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -25,9 +25,9 @@ func setupRoomUseCaseTest(t *testing.T) (*usecase.RoomUseCase, sqlmock.Sqlmock) 
 	assert.NoError(t, err)
 
 	// create gorm db
-	dialector := mysql.New(mysql.Config{
-		Conn:                      db,
-		SkipInitializeWithVersion: true,
+	dialector := postgres.New(postgres.Config{
+		Conn:                 db,
+		PreferSimpleProtocol: true,
 	})
 	gormDB, err := gorm.Open(dialector, &gorm.Config{})
 	assert.NoError(t, err)

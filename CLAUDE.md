@@ -5,16 +5,22 @@ Interactive QnA backend. Core differentiator: **XP Ranking gamification system**
 ## Commands
 
 ```bash
-go run cmd/web/main.go                                      # Run server
-go test ./tests/...                                         # Run all tests
-go test ./tests/user_usecase_test.go ./tests/mocks/*.go -v  # Single test file
-go test ./tests/... -run TestFunctionName -v                # Single test function
-go build -o bin/server cmd/web/main.go                      # Build
+go run cmd/web/main.go                                            # Run server
+go build -o bin/server cmd/web/main.go                            # Build
 go mod tidy
 
+# Unit tests (use go-sqlmock, no DB required)
+go test ./test/unit/... -v
+go test ./test/unit/... -run TestFunctionName -v
+go test ./test/unit/user_usecase_test.go ./test/mocks/*.go -v     # Single file
+
+# Integration tests (requires PostgreSQL + Redis, slido_clone_test DB created)
+go test ./test/integration/... -v
+go test ./test/integration/... -run TestRegister_Success -v
+
 # Run migrations (adjust DSN to match .env values)
-migrate -database "mysql://user:pass@tcp(host:port)/dbname" -path db/migrations up
-migrate -database "mysql://user:pass@tcp(host:port)/dbname" -path db/migrations down
+migrate -database "postgres://user:pass@localhost:5432/dbname?sslmode=disable" -path db/migrations up
+migrate -database "postgres://user:pass@localhost:5432/dbname?sslmode=disable" -path db/migrations down
 ```
 
 ## Environment
@@ -23,7 +29,7 @@ Copy `.env.example` to `.env`. Required: `DATABASE_USERNAME`, `DATABASE_PASSWORD
 
 ## Tech Stack
 
-Go Fiber (HTTP + WebSocket) · GORM + MySQL 8.0 · Redis (JWT blacklist) · JWT auth · Pion WebRTC SFU (`internal/sfu/`)
+Go Fiber (HTTP + WebSocket) · GORM + PostgreSQL · Redis (JWT blacklist) · JWT auth · Pion WebRTC SFU (`internal/sfu/`)
 
 ## Rules
 
