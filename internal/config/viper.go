@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -18,11 +19,15 @@ func NewViper() *viper.Viper {
 	}
 
 	// read configuration from .env (sensitive/secret configuration)
+	// If .env is absent (e.g., running in Docker), fall back to OS environment variables
+	// loaded via AutomaticEnv() above.
 	config.SetConfigFile(".env")
 	config.SetConfigType("env")
 	config.AutomaticEnv()
 	if err := config.MergeInConfig(); err != nil {
-		panic(fmt.Errorf("Fatal error env file: %s \n", err))
+		if !os.IsNotExist(err) {
+			panic(fmt.Errorf("Fatal error env file: %s \n", err))
+		}
 	}
 
 	return config
