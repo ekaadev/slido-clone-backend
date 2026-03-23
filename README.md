@@ -5,7 +5,7 @@ Backend service untuk aplikasi Slido Clone dengan fitur Q&A, Polling, Live Chat,
 ## Prerequisites
 
 - Go 1.21+
-- MySQL 8.0+
+- PostgreSQL 14+
 - Redis 7.0+
 
 ## Getting Started
@@ -51,23 +51,21 @@ Download dari [Redis for Windows](https://github.com/microsoftarchive/redis/rele
 
 ### 2. Setup Database
 
-Access MySQL shell:
+Access PostgreSQL shell:
 ```bash
-mysql -u root -p
+psql -U postgres
 ```
 
 Create user and database:
 ```sql
-CREATE USER 'slido_user'@'localhost' IDENTIFIED BY 'password';
-CREATE DATABASE slido_clone;
-GRANT ALL PRIVILEGES ON slido_clone.* TO 'slido_user'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
+CREATE USER slido_user WITH PASSWORD 'password';
+CREATE DATABASE slido_clone OWNER slido_user;
+\q
 ```
 
 Jalankan migration (pastikan nama database sesuai dengan `slido_clone`):
 ```bash
-migrate -database "mysql://slido_user:password@tcp(localhost:3306)/slido_clone" -path db/migrations up
+migrate -database "postgres://slido_user:password@localhost:5432/slido_clone?sslmode=disable" -path db/migrations up
 ```
 
 > **Note:** Ganti `password` dengan password yang aman untuk production.
@@ -89,7 +87,7 @@ Contoh jika menggunakan environment variables:
 DATABASE_USERNAME=slido_user
 DATABASE_PASSWORD=password
 DATABASE_HOST=localhost
-DATABASE_PORT=3306
+DATABASE_PORT=5432
 DATABASE_NAME=slido_clone
 ```
 
