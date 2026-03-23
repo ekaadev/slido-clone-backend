@@ -21,7 +21,8 @@ go test ./test/unit/... -v
 go test ./test/unit/... -run TestFunctionName -v
 go test ./test/unit/user_usecase_test.go ./test/mocks/*.go -v     # Single file
 
-# Integration tests (requires PostgreSQL + Redis, slido_clone_test DB created)
+# Integration tests — run on HOST (outside Docker), against native PostgreSQL + Redis
+# Requires: slido_clone_test DB, .env.test with DATABASE_HOST=localhost, REDIS_DB=1
 go test ./test/integration/... -v
 go test ./test/integration/... -run TestRegister_Success -v
 

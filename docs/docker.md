@@ -49,20 +49,39 @@ docker compose down -v
 docker compose up --build
 ```
 
-### Run tests against the Dockerized database
+### Running tests
 
-The integration tests require a running Postgres instance. You can use the compose Postgres
-instead of a local install:
+**Unit tests** have no external dependencies and can always be run directly:
 
 ```bash
-# Start only Postgres and Redis (not the app)
-docker compose up -d postgres redis
+go test ./test/unit/... -v
+```
 
-# Run integration tests pointing at the Dockerized Postgres
+**Integration tests** run outside Docker — on the host machine, against native PostgreSQL
+and Redis. They are not run inside a container.
+
+Why outside Docker? The integration tests use Fiber's `app.Test()` helper, which bootstraps
+the entire application in-memory (no HTTP server started). They just need a real database
+and Redis to connect to. Running them natively is faster and doesn't require a Docker rebuild
+on every code change.
+
+Prerequisites for integration tests:
+- PostgreSQL running natively with a `slido_clone_test` database created
+- Redis running natively
+- `.env.test` file present at project root with `DATABASE_NAME=slido_clone_test`,
+  `DATABASE_HOST=localhost`, and `REDIS_DB=1`
+
+```bash
+# Create the test database (one-time setup)
+psql -U your_user -c "CREATE DATABASE slido_clone_test OWNER your_user;"
+
+# Run integration tests
 go test ./test/integration/... -v
 ```
 
-Make sure your `.env.test` has `DATABASE_HOST=localhost` (the compose Postgres is exposed on localhost:5432).
+The Postgres and Redis containers started by `docker compose up` are **not accessible from
+the host** (no ports are exposed) — they exist solely for the running app container. Keep
+your native PostgreSQL and Redis running alongside Docker for local development.
 
 ---
 
