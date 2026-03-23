@@ -32,9 +32,9 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: 'https://github.com/tirth8205/code-review-graph'
+          plugin_marketplaces: 'https://github.com/tirth8205/code-review-graph@f9f01aed00b6913f7e0014ab85b4fc2bc7ced1b7'
           plugins: 'code-review-graph@code-review-graph'
-          prompt: '/code-review-graph:review-delta'
+          prompt: '/code-review-graph:review-delta ${{ github.repository }}/pull/${{ github.event.issue.number }}'
 
   claude-review-pr:
     if: |
@@ -62,6 +62,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: 'https://github.com/tirth8205/code-review-graph'
+          plugin_marketplaces: 'https://github.com/tirth8205/code-review-graph@f9f01aed00b6913f7e0014ab85b4fc2bc7ced1b7'
           plugins: 'code-review-graph@code-review-graph'
           prompt: '/code-review-graph:review-pr ${{ github.repository }}/pull/${{ github.event.issue.number }}'
