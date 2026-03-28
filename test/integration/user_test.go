@@ -18,9 +18,9 @@ func TestRegister_Success(t *testing.T) {
 	}, "")
 
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.NotEmpty(t, extractCookieToken(resp))
 	body := readBody(t, resp)
 	data := body["data"].(map[string]interface{})
-	assert.NotEmpty(t, data["token"])
 	user := data["user"].(map[string]interface{})
 	assert.Equal(t, "presenter1", user["username"])
 	assert.Equal(t, "presenter", user["role"])
@@ -72,9 +72,7 @@ func TestLogin_Success(t *testing.T) {
 	}, "")
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body := readBody(t, resp)
-	data := body["data"].(map[string]interface{})
-	assert.NotEmpty(t, data["token"])
+	assert.NotEmpty(t, extractCookieToken(resp))
 }
 
 func TestLogin_WrongPassword(t *testing.T) {
@@ -105,9 +103,7 @@ func TestAnonymous_Success(t *testing.T) {
 	}, "")
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body := readBody(t, resp)
-	data := body["data"].(map[string]interface{})
-	assert.NotEmpty(t, data["token"])
+	assert.NotEmpty(t, extractCookieToken(resp))
 }
 
 func TestLogout_Success(t *testing.T) {

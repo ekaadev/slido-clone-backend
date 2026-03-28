@@ -17,13 +17,13 @@ func TestCreateRoom_Success(t *testing.T) {
 	}, token)
 
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.NotEmpty(t, extractCookieToken(resp))
 	body := readBody(t, resp)
 	data := body["data"].(map[string]interface{})
 	room := data["room"].(map[string]interface{})
 	assert.Equal(t, "My Test Room", room["title"])
 	assert.NotEmpty(t, room["room_code"])
 	assert.Equal(t, "active", room["status"])
-	assert.NotEmpty(t, data["token"])
 }
 
 func TestCreateRoom_Unauthorized(t *testing.T) {

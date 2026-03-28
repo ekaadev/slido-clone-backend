@@ -19,9 +19,9 @@ func TestJoinRoom_Success(t *testing.T) {
 	resp := makeRequest(t, http.MethodPost, "/api/v1/rooms/"+roomCode+"/join", map[string]interface{}{}, otherToken)
 
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.NotEmpty(t, extractCookieToken(resp))
 	body := readBody(t, resp)
 	data := body["data"].(map[string]interface{})
-	assert.NotEmpty(t, data["token"])
 	participant := data["participant"].(map[string]interface{})
 	assert.Equal(t, "joinuser", participant["display_name"])
 }

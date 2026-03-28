@@ -2,6 +2,7 @@ package integration
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -151,10 +152,15 @@ func cleanDB(t *testing.T) {
 			t.Logf("warning: failed to truncate %s: %v", table, err)
 		}
 	}
+	// flush Redis to reset rate limiter counters and JWT blacklist between tests
+	if err := testRedis.FlushDB(context.Background()).Err(); err != nil {
+		t.Logf("warning: failed to flush test Redis: %v", err)
+	}
 }
 
 // makeRequest builds an HTTP request and calls testApp.Test().
 // body is marshalled to JSON if non-nil.
+// token is sent as an HTTP-only cookie named "token" (matching the auth middleware).
 func makeRequest(t *testing.T, method, path string, body interface{}, token string) *http.Response {
 	t.Helper()
 	var bodyReader io.Reader
@@ -173,13 +179,24 @@ func makeRequest(t *testing.T, method, path string, body interface{}, token stri
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.AddCookie(&http.Cookie{Name: "token", Value: token})
 	}
 	resp, err := testApp.Test(req, -1)
 	if err != nil {
 		t.Fatalf("failed to execute test request: %v", err)
 	}
 	return resp
+}
+
+// extractCookieToken returns the value of the "token" cookie from a response's
+// Set-Cookie header. Returns an empty string if the cookie is not present.
+func extractCookieToken(resp *http.Response) string {
+	for _, c := range resp.Cookies() {
+		if c.Name == "token" {
+			return c.Value
+		}
+	}
+	return ""
 }
 
 // readBody reads and returns the response body as a map.
@@ -208,9 +225,11 @@ func registerUser(t *testing.T, username, email, password, role string) string {
 		result := readBody(t, resp)
 		t.Fatalf("register failed: status=%d body=%v", resp.StatusCode, result)
 	}
-	result := readBody(t, resp)
-	data := result["data"].(map[string]interface{})
-	return data["token"].(string)
+	token := extractCookieToken(resp)
+	if token == "" {
+		t.Fatal("register succeeded but no token cookie in response")
+	}
+	return token
 }
 
 // loginUser logs in and returns the JWT token.
@@ -225,9 +244,11 @@ func loginUser(t *testing.T, username, password string) string {
 		result := readBody(t, resp)
 		t.Fatalf("login failed: status=%d body=%v", resp.StatusCode, result)
 	}
-	result := readBody(t, resp)
-	data := result["data"].(map[string]interface{})
-	return data["token"].(string)
+	token := extractCookieToken(resp)
+	if token == "" {
+		t.Fatal("login succeeded but no token cookie in response")
+	}
+	return token
 }
 
 // createRoom creates a room with the given title and returns the room map and room-scoped token.
@@ -242,7 +263,10 @@ func createRoom(t *testing.T, token, title string) (map[string]interface{}, stri
 	result := readBody(t, resp)
 	data := result["data"].(map[string]interface{})
 	room := data["room"].(map[string]interface{})
-	roomToken := data["token"].(string)
+	roomToken := extractCookieToken(resp)
+	if roomToken == "" {
+		t.Fatal("createRoom succeeded but no token cookie in response")
+	}
 	return room, roomToken
 }
 
@@ -263,6 +287,9 @@ func joinRoom(t *testing.T, token, roomCode string) (map[string]interface{}, str
 	result := readBody(t, resp)
 	data := result["data"].(map[string]interface{})
 	participant := data["participant"].(map[string]interface{})
-	roomToken := data["token"].(string)
+	roomToken := extractCookieToken(resp)
+	if roomToken == "" {
+		t.Fatal("joinRoom succeeded but no token cookie in response")
+	}
 	return participant, roomToken
 }
