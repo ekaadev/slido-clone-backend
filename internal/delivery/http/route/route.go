@@ -7,6 +7,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 )
 
 type RouteConfig struct {
@@ -21,6 +23,8 @@ type RouteConfig struct {
 	ActivityController      *http.ActivityController
 	AuthMiddleware          fiber.Handler
 	WSHandler               *websocket.WebSocketHandler
+	Redis                   *redis.Client
+	Log                     *logrus.Logger
 }
 
 // Setup running all route setup here
@@ -42,11 +46,16 @@ func (c *RouteConfig) SetupGuestRoute() {
 		return ctx.SendStatus(fiber.StatusOK)
 	})
 
-	// NOTE: uses in-memory storage; if prefork is enabled, each worker gets its own counter
-	// (effective limit = Max * num_workers). Use Redis-backed storage for prefork.
+	// Use Redis-backed storage with in-memory fallback and circuit breaker.
+	// Falls back to per-process in-memory if Redis is nil or unavailable.
+	var storage fiber.Storage
+	if c.Redis != nil {
+		storage = NewFallbackStorage(c.Redis, c.Log)
+	}
 	authLimiter := limiter.New(limiter.Config{
 		Max:        10,
 		Expiration: 1 * time.Minute,
+		Storage:    storage,
 	})
 
 	c.App.Post("/api/v1/users/register", authLimiter, c.UserController.Register)

@@ -91,6 +91,8 @@ func Bootstrap(config *BootstrapConfig) {
 		ActivityController:      activityController,
 		AuthMiddleware:          authMiddleware,
 		WSHandler:               wsHandler,
+		Redis:                   config.Redis,
+		Log:                     config.Log,
 	}
 	routeConfig.Setup()
 }
