@@ -8,13 +8,23 @@ const (
 	authCookieMaxAge = 86400 * 30
 )
 
-// setAuthCookie sets the JWT token as an HTTP-only, Secure, SameSite=Lax cookie.
+// cookieSecure controls the Secure flag on auth cookies.
+// Set to true in production (HTTPS). Defaults to false to allow HTTP in development.
+var cookieSecure bool
+
+// SetCookieSecure configures the Secure flag for all auth cookies.
+// Call this once during application bootstrap with the value of COOKIE_SECURE env var.
+func SetCookieSecure(secure bool) {
+	cookieSecure = secure
+}
+
+// setAuthCookie sets the JWT token as an HTTP-only, SameSite=Lax cookie.
 func setAuthCookie(ctx *fiber.Ctx, token string) {
 	ctx.Cookie(&fiber.Cookie{
 		Name:     authCookieName,
 		Value:    token,
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   cookieSecure,
 		SameSite: "Lax",
 		Path:     "/",
 		MaxAge:   authCookieMaxAge,
@@ -27,7 +37,7 @@ func clearAuthCookie(ctx *fiber.Ctx) {
 		Name:     authCookieName,
 		Value:    "",
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   cookieSecure,
 		SameSite: "Lax",
 		Path:     "/",
 		MaxAge:   -1,

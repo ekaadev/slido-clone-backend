@@ -31,6 +31,9 @@ func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
 	token := ctx.Cookies("token")
 	if token == "" {
 		token = ctx.Query("token")
+		if token != "" {
+			wsh.log.Warn("WS auth via query param (non-browser client); tokens in URLs may appear in proxy/access logs")
+		}
 	}
 	if token == "" {
 		wsh.log.Warn("missing auth token")

@@ -40,6 +40,9 @@ func Bootstrap(config *BootstrapConfig) {
 	pollRepository := repository.NewPollRepository(config.Log)
 	activityRepository := repository.NewActivityRepository(config.Log)
 
+	// configure cookie Secure flag from env (true in production/HTTPS, false for local HTTP dev)
+	http.SetCookieSecure(config.Config.GetBool("COOKIE_SECURE"))
+
 	// setup utils
 	tokenUtil := util.NewTokenUtil(config.Config.GetString("JWT_SECRET"), config.Redis)
 

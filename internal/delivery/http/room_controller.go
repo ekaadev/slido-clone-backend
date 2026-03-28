@@ -214,9 +214,13 @@ func (c *RoomController) SendAnnouncement(ctx *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
-	// only the room presenter may send announcements
+	// only the room presenter may send announcements, and only to their own room
 	if !auth.IsRoomOwner {
 		c.Log.Warnf("SendAnnouncement - User is not room owner")
+		return fiber.ErrForbidden
+	}
+	if auth.RoomID == nil || *auth.RoomID != uint(roomIDUint64) {
+		c.Log.Warnf("SendAnnouncement - Token room_id does not match URL room_id")
 		return fiber.ErrForbidden
 	}
 

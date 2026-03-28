@@ -6,11 +6,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/helmet/v2"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 // NewFiber function untuk create fiber app yang digunakan untuk web server
-func NewFiber(config *viper.Viper) *fiber.App {
+func NewFiber(config *viper.Viper, log *logrus.Logger) *fiber.App {
 	var app = fiber.New(fiber.Config{
 		AppName:      config.GetString("app.name"),
 		Prefork:      config.GetBool("app.prefork"),
@@ -24,6 +25,7 @@ func NewFiber(config *viper.Viper) *fiber.App {
 	allowedOrigins := config.GetString("ALLOWED_ORIGINS")
 	if allowedOrigins == "" {
 		allowedOrigins = "http://localhost:3000"
+		log.Warn("ALLOWED_ORIGINS not set; defaulting to http://localhost:3000 — set this in production")
 	}
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,

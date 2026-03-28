@@ -42,7 +42,8 @@ func (c *RouteConfig) SetupGuestRoute() {
 		return ctx.SendStatus(fiber.StatusOK)
 	})
 
-	// rate limiter for auth endpoints: max 10 requests per minute per IP
+	// NOTE: uses in-memory storage; if prefork is enabled, each worker gets its own counter
+	// (effective limit = Max * num_workers). Use Redis-backed storage for prefork.
 	authLimiter := limiter.New(limiter.Config{
 		Max:        10,
 		Expiration: 1 * time.Minute,
