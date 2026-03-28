@@ -33,17 +33,20 @@ See [docs/docker.md](docs/docker.md) for the full Docker guide (production deplo
 #### Install Golang Migrate
 
 **Linux:**
+
 ```bash
 curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
 sudo mv migrate /usr/local/bin/migrate
 ```
 
 **macOS:**
+
 ```bash
 brew install golang-migrate
 ```
 
 **Windows:**
+
 ```bash
 scoop install migrate
 ```
@@ -51,6 +54,7 @@ scoop install migrate
 #### Install Redis
 
 **Linux (Ubuntu/Debian):**
+
 ```bash
 sudo apt update
 sudo apt install redis-server
@@ -59,6 +63,7 @@ sudo systemctl enable redis-server
 ```
 
 **macOS:**
+
 ```bash
 brew install redis
 brew services start redis
@@ -70,11 +75,13 @@ Download dari [Redis for Windows](https://github.com/microsoftarchive/redis/rele
 ### 2. Setup Database
 
 Access PostgreSQL shell:
+
 ```bash
 psql -U postgres
 ```
 
 Create user and database:
+
 ```sql
 CREATE USER reisify_user WITH PASSWORD 'password';
 CREATE DATABASE reisify OWNER reisify_user;
@@ -82,6 +89,7 @@ CREATE DATABASE reisify OWNER reisify_user;
 ```
 
 Run migrations:
+
 ```bash
 migrate -database "postgres://reisify_user:password@localhost:5432/reisify?sslmode=disable" -path db/migrations up
 ```
@@ -141,13 +149,14 @@ Integration tests run **on the host machine** against PostgreSQL and Redis provi
 
 ```bash
 # Start the test containers
-docker compose -f docker-compose.test.yml up -d
+docker compose -f docker-compose.test.yml --env-file .env.test up -d
 
 # Create .env.test
 cp .env.example .env.test
 ```
 
 Edit `.env.test`:
+
 ```
 DATABASE_USERNAME=testuser
 DATABASE_PASSWORD=testpass
@@ -170,6 +179,7 @@ make test-integration
 ```
 
 **Stop test containers when done:**
+
 ```bash
 docker compose -f docker-compose.test.yml down -v
 ```
