@@ -1,0 +1,15 @@
+#!/bin/sh
+# Pre-commit hook: build check, vet, and unit tests
+
+set -e
+
+echo "==> go build"
+go build ./...
+
+echo "==> go vet"
+go vet ./...
+
+echo "==> unit tests"
+go test ./test/unit/... -count=1 -timeout 60s
+
+echo "==> OK"
