@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
-  title: Slido Clone API
-  description: API specification for a Slido clone application (Forum Discussion Interactive). See api-spec.md for WebSocket documentation.
+  title: Reisify API
+  description: API specification for Reisify — an interactive Q&A and polling platform. See api-spec.md for WebSocket documentation.
   version: 1.0.0
 servers:
   - url: 'http://localhost:3000/api/v1'

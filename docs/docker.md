@@ -11,24 +11,27 @@ This document explains how to build, run, and maintain the application using Doc
 - Docker Desktop (macOS/Windows) or Docker Engine + Docker Compose plugin (Linux)
 - A filled-in `.env` file (copy `.env.example` to `.env` and fill in values)
 
-### Start the full stack
+### Dev model: app on host, Postgres + Redis in Docker
+
+Start the infrastructure containers:
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
-This starts three containers: the Go app, Postgres, and Redis.
-The `--build` flag rebuilds the app image on every run. Omit it after the first run for faster startup.
-
-### Start in the background
-
-```bash
-docker compose up -d --build
+Postgres is exposed on host port **5433**, Redis on **6380**. Configure `.env`:
+```
+DATABASE_HOST=localhost
+DATABASE_PORT=5433
+REDIS_HOST=localhost
+REDIS_PORT=6380
 ```
 
-View logs:
+Then run the app on the host:
 ```bash
-docker compose logs -f app
+go run cmd/web/main.go
+# or
+make run
 ```
 
 ### Stop everything
@@ -42,45 +45,45 @@ This stops containers but keeps the Postgres data volume. To also delete all dat
 docker compose down -v
 ```
 
-### Rebuild after code changes
-
-```bash
-docker compose up --build
-```
-
 ### Running tests
 
 **Unit tests** have no external dependencies and can always be run directly:
 
 ```bash
 go test ./test/unit/... -v
+# or
+make test-unit
 ```
 
-**Integration tests** run outside Docker — on the host machine, against native PostgreSQL
-and Redis. They are not run inside a container.
-
-Why outside Docker? The integration tests use Fiber's `app.Test()` helper, which bootstraps
-the entire application in-memory (no HTTP server started). They just need a real database
-and Redis to connect to. Running them natively is faster and doesn't require a Docker rebuild
-on every code change.
-
-Prerequisites for integration tests:
-- PostgreSQL running natively with a `slido_clone_test` database created
-- Redis running natively
-- `.env.test` file present at project root with `DATABASE_NAME=slido_clone_test`,
-  `DATABASE_HOST=localhost`, and `REDIS_DB=1`
+**Integration tests** run on the host against dedicated test containers from `docker-compose.test.yml`.
+They use Fiber's `app.Test()` helper in-memory — no HTTP server needed, just a real database and Redis.
 
 ```bash
-# Create the test database (one-time setup)
-psql -U your_user -c "CREATE DATABASE slido_clone_test OWNER your_user;"
+# Start test containers (one-time per session)
+docker compose -f docker-compose.test.yml up -d
 
 # Run integration tests
 go test ./test/integration/... -v
+# or
+make test-integration
+
+# Stop and clean up test containers
+docker compose -f docker-compose.test.yml down -v
 ```
 
-The Postgres and Redis containers started by `docker compose up` are **not accessible from
-the host** (no ports are exposed) — they exist solely for the running app container. Keep
-your native PostgreSQL and Redis running alongside Docker for local development.
+**Port mapping for test containers:**
+- postgres-test: host port **5434** → container 5432
+- redis-test: host port **6381** → container 6379
+
+`.env.test` should use these ports:
+```
+DATABASE_HOST=localhost
+DATABASE_PORT=5434
+DATABASE_NAME=reisify_test
+REDIS_HOST=localhost
+REDIS_PORT=6381
+REDIS_DB=1
+```
 
 ---
 
@@ -88,13 +91,13 @@ your native PostgreSQL and Redis running alongside Docker for local development.
 
 Build and tag the image:
 ```bash
-docker build -t slido-clone-backend:latest .
+docker build -t reisify:latest .
 ```
 
 Tag for a registry (e.g., GitHub Container Registry):
 ```bash
-docker tag slido-clone-backend:latest ghcr.io/youruser/slido-clone-backend:latest
-docker push ghcr.io/youruser/slido-clone-backend:latest
+docker tag reisify:latest ghcr.io/youruser/reisify:latest
+docker push ghcr.io/youruser/reisify:latest
 ```
 
 ---
@@ -133,11 +136,11 @@ sudo systemctl restart postgresql
 DATABASE_USERNAME=your_db_user
 DATABASE_PASSWORD=your_db_password
 DATABASE_PORT=5432
-DATABASE_NAME=slido_clone
+DATABASE_NAME=reisify
 JWT_SECRET=your_jwt_secret
 REDIS_DB=0
 REDIS_PORT=6379
-APP_IMAGE=ghcr.io/youruser/slido-clone-backend:latest
+APP_IMAGE=ghcr.io/youruser/reisify:latest
 ```
 
 ### Deploy

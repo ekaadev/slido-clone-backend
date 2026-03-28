@@ -1,19 +1,19 @@
-# Slido Clone Backend
+# Reisify
 
-Backend service untuk aplikasi Slido Clone dengan fitur Q&A, Polling, Live Chat, dan Leaderboard.
+Backend service untuk aplikasi Reisify — platform interaktif Q&A, Polling, Live Chat, dan Leaderboard berbasis XP Gamification.
 
 ## Getting Started
 
-### Quick Start (Docker)
+### Quick Start (Docker — Postgres & Redis)
 
-The fastest way to run the full stack locally. Requires [Docker](https://docs.docker.com/get-docker/).
+Run Postgres and Redis in Docker, then run the app on the host.
 
 ```bash
-cp .env.example .env   # fill in values (set DATABASE_PORT=5432)
-docker compose up --build
+cp .env.example .env   # fill in DATABASE_USERNAME, DATABASE_PASSWORD, JWT_SECRET
+docker compose up -d
+go run cmd/web/main.go
 ```
 
-This starts the Go app, PostgreSQL, and Redis in one command. Migrations run automatically.
 Server: `http://localhost:3000`
 
 See [docs/docker.md](docs/docker.md) for the full Docker guide (production deploy, troubleshooting, etc.).
@@ -76,14 +76,14 @@ psql -U postgres
 
 Create user and database:
 ```sql
-CREATE USER slido_user WITH PASSWORD 'password';
-CREATE DATABASE slido_clone OWNER slido_user;
+CREATE USER reisify_user WITH PASSWORD 'password';
+CREATE DATABASE reisify OWNER reisify_user;
 \q
 ```
 
-Jalankan migration (pastikan nama database sesuai dengan `slido_clone`):
+Run migrations:
 ```bash
-migrate -database "postgres://slido_user:password@localhost:5432/slido_clone?sslmode=disable" -path db/migrations up
+migrate -database "postgres://reisify_user:password@localhost:5432/reisify?sslmode=disable" -path db/migrations up
 ```
 
 > **Note:** Ganti `password` dengan password yang aman untuk production.
@@ -97,32 +97,27 @@ go build ./...
 
 ### 4. Setup Configuration
 
-Buat file config (bebas, bisa `.env` atau `config.json` tergantung implementasi `config.NewViper`). Pastikan database name adalah `slido_clone`.
-
-Contoh jika menggunakan environment variables:
+Copy `.env.example` to `.env` dan isi nilainya:
 
 ```bash
-DATABASE_USERNAME=slido_user
+DATABASE_USERNAME=reisify_user
 DATABASE_PASSWORD=password
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_NAME=slido_clone
+DATABASE_NAME=reisify
 ```
+
+> **Docker dev ports:** If using Docker Compose for Postgres/Redis, use `DATABASE_PORT=5433` and `REDIS_PORT=6380`.
 
 ### 5. Run Application
 
 ```bash
 go run cmd/web/main.go
+# or
+make run
 ```
 
-Server akan berjalan di `http://localhost:3000` (atau sesuai konfigurasi).
-
-### Check Redis Connection
-
-```bash
-redis-cli ping
-# Expected output: PONG
-```
+Server akan berjalan di `http://localhost:3000`.
 
 ---
 
@@ -134,18 +129,19 @@ No external dependencies required. Run anytime:
 
 ```bash
 go test ./test/unit/... -v
-go test ./test/unit/... -run TestFunctionName -v
+# or
+make test-unit
 ```
 
 ### Integration Tests
 
-Integration tests always run **on the host machine** (outside Docker) against native PostgreSQL and Redis. They use Fiber's `app.Test()` to bootstrap the app in-memory — no running server needed, just a real database.
+Integration tests run **on the host machine** against PostgreSQL and Redis provided by `docker-compose.test.yml`. They use Fiber's `app.Test()` in-memory — no running server needed.
 
 **One-time setup:**
 
 ```bash
-# Create the test database
-psql -U slido_user -c "CREATE DATABASE slido_clone_test OWNER slido_user;"
+# Start the test containers
+docker compose -f docker-compose.test.yml up -d
 
 # Create .env.test
 cp .env.example .env.test
@@ -153,14 +149,14 @@ cp .env.example .env.test
 
 Edit `.env.test`:
 ```
-DATABASE_USERNAME=slido_user
-DATABASE_PASSWORD=password
+DATABASE_USERNAME=testuser
+DATABASE_PASSWORD=testpass
 DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_NAME=slido_clone_test
+DATABASE_PORT=5434
+DATABASE_NAME=reisify_test
 JWT_SECRET=test_secret
 REDIS_HOST=localhost
-REDIS_PORT=6379
+REDIS_PORT=6381
 REDIS_DB=1
 ```
 
@@ -169,8 +165,11 @@ REDIS_DB=1
 ```bash
 go test ./test/integration/... -v
 go test ./test/integration/... -run TestRegister_Success -v
+# or
+make test-integration
 ```
 
-> **Note:** If you use `docker compose up` to run the app, keep native PostgreSQL and Redis
-> running alongside it — the Docker Compose services are not port-exposed to the host,
-> so integration tests must use the native services.
+**Stop test containers when done:**
+```bash
+docker compose -f docker-compose.test.yml down -v
+```

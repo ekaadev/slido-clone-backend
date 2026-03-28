@@ -2,7 +2,7 @@
 
 ## Overview
 
-Slido Clone Backend is a Go-based backend for an interactive QnA platform. The primary USP is a gamification system ("XP Ranking") designed to measure and reward quality participation, turning the platform into a formative assessment tool for presenters and educators.
+Reisify is a Go-based backend for an interactive QnA platform. The primary USP is a gamification system ("XP Ranking") designed to measure and reward quality participation, turning the platform into a formative assessment tool for presenters and educators.
 
 ## Tech Stack
 

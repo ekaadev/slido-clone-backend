@@ -9,20 +9,22 @@ go run cmd/web/main.go                                            # Run server
 go build -o bin/server cmd/web/main.go                            # Build
 go mod tidy
 
-# Docker (local dev — starts app + Postgres + Redis)
-docker compose up --build                                         # Start full stack
-docker compose up -d --build                                      # Start in background
+# Docker dev (Postgres on :5433, Redis on :6380 — app runs on host)
+docker compose up -d                                              # Start Postgres + Redis
 docker compose down                                               # Stop (keep data)
 docker compose down -v                                            # Stop + delete data volume
-docker compose logs -f app                                        # Stream app logs
+
+# Docker test (Postgres on :5434, Redis on :6381)
+docker compose -f docker-compose.test.yml up -d                  # Start test infra
+docker compose -f docker-compose.test.yml down -v                 # Stop + clean
 
 # Unit tests (use go-sqlmock, no DB required)
 go test ./test/unit/... -v
 go test ./test/unit/... -run TestFunctionName -v
 go test ./test/unit/user_usecase_test.go ./test/mocks/*.go -v     # Single file
 
-# Integration tests — run on HOST (outside Docker), against native PostgreSQL + Redis
-# Requires: slido_clone_test DB, .env.test with DATABASE_HOST=localhost, REDIS_DB=1
+# Integration tests — run on HOST against docker-compose.test.yml
+# Requires: .env.test with DATABASE_PORT=5434, REDIS_PORT=6381, REDIS_DB=1, DATABASE_NAME=reisify_test
 go test ./test/integration/... -v
 go test ./test/integration/... -run TestRegister_Success -v
 
