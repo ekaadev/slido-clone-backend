@@ -137,9 +137,17 @@ DATABASE_USERNAME=your_db_user
 DATABASE_PASSWORD=your_db_password
 DATABASE_PORT=5432
 DATABASE_NAME=reisify
-JWT_SECRET=your_jwt_secret
+# use 'require' or 'verify-full' in production
+DATABASE_SSLMODE=require
+# Must be at least 32 characters: openssl rand -hex 32
+JWT_SECRET=your_jwt_secret_min_32_chars
 REDIS_DB=0
 REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password
+# Comma-separated allowed frontend origins
+ALLOWED_ORIGINS=https://app.example.com
+# Set to true when serving over HTTPS
+COOKIE_SECURE=true
 APP_IMAGE=ghcr.io/youruser/reisify:latest
 ```
 

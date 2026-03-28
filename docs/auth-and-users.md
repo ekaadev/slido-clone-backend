@@ -2,7 +2,7 @@
 
 ## Overview
 
-Handles user registration, authentication, anonymous access, and session management. Supports two user types: registered presenters and anonymous participants. All authentication is JWT-based with Redis token blacklisting for logout.
+Handles user registration, authentication, anonymous access, and session management. Supports two user types: registered presenters and anonymous participants. All authentication is JWT-based with Redis token blacklisting for logout. Tokens are transported as HTTP-only cookies (not Authorization headers).
 
 ## Architecture
 
@@ -49,46 +49,53 @@ After joining a room, `RoomID`, `ParticipantID`, and `IsRoomOwner` are populated
 
 ### POST /api/v1/users/register
 - **Auth:** None
+- **Rate limit:** 10 req/min per IP
 - **Request:** `{ username, email, password, role }`
-- **Response:** `{ user: UserResponse, token: string }`
-- **Logic:** Hash password with bcrypt, check uniqueness of email/username, create user, return JWT
+- **Response:** `{ user: UserResponse }` — JWT set as `token` HTTP-only cookie
+- **Logic:** Hash password with bcrypt, check uniqueness of email/username, create user, set auth cookie
 
 ### POST /api/v1/users/login
 - **Auth:** None
+- **Rate limit:** 10 req/min per IP
 - **Request:** `{ username, password }`
-- **Response:** `{ user: UserResponse, token: string }`
-- **Logic:** Find user by username, compare bcrypt hash, return JWT
+- **Response:** `{ user: UserResponse }` — JWT set as `token` HTTP-only cookie
+- **Logic:** Find user by username, compare bcrypt hash, set auth cookie
 
 ### POST /api/v1/users/anonymous
 - **Auth:** None
+- **Rate limit:** 10 req/min per IP
 - **Request:** `{ roomCode, displayName }`
-- **Response:** `{ participant: ParticipantResponse, token: string }`
-- **Logic:** Find room by code, create anonymous participant (no user_id), return room-scoped JWT
+- **Response:** `{ participant: ParticipantResponse }` — room-scoped JWT set as `token` HTTP-only cookie
+- **Logic:** Find room by code, create anonymous participant (no user_id), set auth cookie
 
 ### POST /api/v1/users/logout
-- **Auth:** Required (Bearer token)
+- **Auth:** Required (cookie)
 - **Request:** None
 - **Response:** `{ data: null }`
-- **Logic:** Blacklist current JWT in Redis; subsequent requests with this token return 401
+- **Logic:** Blacklist current JWT in Redis; clears the `token` cookie; subsequent requests return 401
 
 ## Business Rules
 
 - Email and username must be unique; returns 409 conflict if taken
 - Anonymous users are created as participants directly — no `users` table entry
 - Anonymous JWT has `IsAnonymous: true`, no `UserID`
-- Logout blacklists the exact token string in Redis (TTL = token expiry)
-- All routes except register, login, anonymous require Bearer token via `Authorization` header
+- Logout blacklists the exact token string in Redis (TTL = token expiry) and clears the auth cookie
+- All routes except register, login, anonymous, and room lookup require the `token` cookie
 
 ## Auth Middleware
 
-```
-Authorization: Bearer <jwt_token>
-```
+Tokens are read from the `token` HTTP-only cookie set on login/register/anonymous.
 
-Middleware (`NewAuth()`) validates the token and sets `ctx.Locals("auth", *model.Auth)`.
+Middleware (`NewAuth()`) validates the cookie token and sets `ctx.Locals("auth", *model.Auth)`.
 Use `middleware.GetUser(c)` in controllers to retrieve the claims.
 
+Cookie attributes:
+- `HttpOnly: true` — not accessible to JavaScript
+- `Secure`: controlled by `COOKIE_SECURE` env var (false for local dev, true in production)
+- `SameSite: Lax`
+- `MaxAge`: 30 days (matching JWT expiry)
+
 Returns `401 Unauthorized` if:
-- Header is missing
+- Cookie is missing
 - Token is invalid or expired
 - Token is blacklisted in Redis

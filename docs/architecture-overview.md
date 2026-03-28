@@ -39,9 +39,9 @@ All dependencies are wired in `internal/config/app.go` — `Bootstrap()` functio
 3. Use Cases (business logic, injected with repos + utils)
 4. WebSocket Hub (room-scoped connection manager)
 5. HTTP Controllers (injected with use cases + hub)
-6. Middleware (auth, injected with TokenUtil)
+6. Middleware: Helmet (security headers), CORS, auth (injected with TokenUtil)
 7. WebSocket Handler (injected with use cases + hub)
-8. Routes registered via `route.SetupRoutes()`
+8. Routes registered via `route.SetupRoutes()` — includes rate limiter on auth endpoints
 
 ## HTTP Response Format
 
@@ -62,16 +62,30 @@ c.JSON(model.WebResponse{Data: items, Paging: &model.PaginationResponse{
 
 ## Auth Flow
 
-1. Register/Login → returns JWT with `UserID`, `Username`, `Email`, `Role`
-2. Join Room → returns new JWT with added `RoomID`, `ParticipantID`, `IsRoomOwner` claims
-3. WebSocket connection → uses room-scoped JWT via `?token=` query param
-4. Logout → blacklists token in Redis; all subsequent requests with that token return 401
+1. Register/Login → JWT set as `token` HTTP-only cookie (HttpOnly, SameSite=Lax, configurable Secure)
+2. Join Room → new room-scoped JWT cookie with added `RoomID`, `ParticipantID`, `IsRoomOwner` claims
+3. WebSocket connection → reads `token` cookie first; falls back to `?token=` query param for non-browser clients
+4. Logout → blacklists token in Redis and clears the cookie; subsequent requests return 401
+
+Token is never returned in the JSON response body.
 
 JWT claims are defined in `model.Auth` (`internal/model/auth.go`).
 
+## Security Middleware
+
+Applied globally in `Bootstrap()` before routes:
+
+| Middleware | Purpose |
+|------------|---------|
+| Helmet | Security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`, etc. |
+| CORS | Restricts origins to `ALLOWED_ORIGINS` env var; `AllowCredentials: true` required for cookies |
+| Body limit | 256 KB request body cap |
+
+Rate limiting (10 req/min per IP, Redis-backed with in-memory fallback) is applied on `/register`, `/login`, `/anonymous`.
+
 ## Database Triggers (Denormalization)
 
-MySQL triggers handle vote count denormalization to avoid N+1 update queries:
+PostgreSQL triggers handle vote count denormalization to avoid N+1 update queries:
 
 | Trigger | Action |
 |---------|--------|

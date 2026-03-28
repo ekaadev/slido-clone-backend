@@ -15,8 +15,16 @@ All real-time updates use a single WebSocket connection per client, multiplexed 
 ## Connection Setup
 
 ```
+GET /ws
+```
+
+Token is read from the `token` HTTP-only cookie (browser clients). For non-browser clients (mobile, CLI) that cannot send cookies on WebSocket upgrade, the token may be passed as a query parameter:
+
+```
 GET /ws?token={jwt_token}
 ```
+
+A warning is logged when the query-param fallback is used, since tokens in URLs may appear in proxy/access logs.
 
 - Token must be a valid, room-scoped JWT containing `RoomID` and `ParticipantID` claims
 - Obtain a room-scoped token via `POST /rooms/:room_code/join` or `POST /users/anonymous`
