@@ -1,12 +1,12 @@
 ---
-description: MySQL/GORM patterns, migrations, DB triggers for denormalization, and transaction usage.
+description: PostgreSQL/GORM patterns, migrations, DB triggers for denormalization, and transaction usage.
 ---
 
 # Database Rules
 
 ## Stack
 
-- MySQL 8.0 with GORM; connection pool configured in `config.json`.
+- PostgreSQL with GORM; connection pool configured in `config.json`.
 - The generic `Repository[T]` base provides `Create`, `Update`, `Delete`, `FindById`, `CountById`; domain repos add their own query methods.
 
 ## Migrations
@@ -19,10 +19,10 @@ description: MySQL/GORM patterns, migrations, DB triggers for denormalization, a
 
 DB triggers manage `upvote_count` (questions) and `vote_count` (poll options) automatically:
 
-| Trigger | Effect |
-|---------|--------|
-| `after_vote_insert` | Increments `upvote_count` on the question |
-| `after_vote_delete` | Decrements `upvote_count` on the question |
+| Trigger                      | Effect                                     |
+| ---------------------------- | ------------------------------------------ |
+| `after_vote_insert`          | Increments `upvote_count` on the question  |
+| `after_vote_delete`          | Decrements `upvote_count` on the question  |
 | `after_poll_response_insert` | Increments `vote_count` on the poll option |
 | `after_poll_response_delete` | Decrements `vote_count` on the poll option |
 
@@ -31,6 +31,7 @@ Do not replicate this logic in application code. Never manually update these den
 ## Transactions
 
 Use GORM transactions for any multi-step write operation:
+
 ```go
 db.Transaction(func(tx *gorm.DB) error {
     // all steps here
