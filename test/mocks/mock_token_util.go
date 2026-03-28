@@ -2,7 +2,7 @@ package mocks
 
 import (
 	"context"
-	"slido-clone-backend/internal/model"
+	"reisify/internal/model"
 
 	"github.com/stretchr/testify/mock"
 )

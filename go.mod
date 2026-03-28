@@ -1,4 +1,4 @@
-module slido-clone-backend
+module reisify
 
 go 1.25.1
 

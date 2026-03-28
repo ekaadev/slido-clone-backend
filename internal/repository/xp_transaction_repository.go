@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"slido-clone-backend/internal/entity"
+	"reisify/internal/entity"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"

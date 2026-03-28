@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"slido-clone-backend/internal/model"
-	"slido-clone-backend/internal/usecase"
-	"slido-clone-backend/internal/util"
+	"reisify/internal/model"
+	"reisify/internal/usecase"
+	"reisify/internal/util"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"

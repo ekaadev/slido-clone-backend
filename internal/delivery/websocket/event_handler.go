@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"slido-clone-backend/internal/model"
-	"slido-clone-backend/internal/sfu"
-	"slido-clone-backend/internal/usecase"
+	"reisify/internal/model"
+	"reisify/internal/sfu"
+	"reisify/internal/usecase"
 	"time"
 
 	"github.com/pion/webrtc/v4"

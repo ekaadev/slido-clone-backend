@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"slido-clone-backend/internal/entity"
-	"slido-clone-backend/internal/model"
+	"reisify/internal/entity"
+	"reisify/internal/model"
 	"time"
 
 	"github.com/sirupsen/logrus"

@@ -2,11 +2,11 @@ package http
 
 import (
 	"encoding/json"
-	"slido-clone-backend/internal/delivery/http/middleware"
-	"slido-clone-backend/internal/delivery/websocket"
-	"slido-clone-backend/internal/model"
-	"slido-clone-backend/internal/usecase"
-	"slido-clone-backend/internal/util"
+	"reisify/internal/delivery/http/middleware"
+	"reisify/internal/delivery/websocket"
+	"reisify/internal/model"
+	"reisify/internal/usecase"
+	"reisify/internal/util"
 	"strconv"
 	"time"
 

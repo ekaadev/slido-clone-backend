@@ -1,9 +1,9 @@
 package http
 
 import (
-	"slido-clone-backend/internal/delivery/http/middleware"
-	"slido-clone-backend/internal/model"
-	"slido-clone-backend/internal/usecase"
+	"reisify/internal/delivery/http/middleware"
+	"reisify/internal/model"
+	"reisify/internal/usecase"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"

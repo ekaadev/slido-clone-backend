@@ -1,8 +1,8 @@
 package route
 
 import (
-	"slido-clone-backend/internal/delivery/http"
-	"slido-clone-backend/internal/delivery/websocket"
+	"reisify/internal/delivery/http"
+	"reisify/internal/delivery/websocket"
 
 	"github.com/gofiber/fiber/v2"
 )

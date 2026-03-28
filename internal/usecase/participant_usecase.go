@@ -2,11 +2,11 @@ package usecase
 
 import (
 	"context"
-	"slido-clone-backend/internal/entity"
-	"slido-clone-backend/internal/model"
-	"slido-clone-backend/internal/model/converter"
-	"slido-clone-backend/internal/repository"
-	"slido-clone-backend/internal/util"
+	"reisify/internal/entity"
+	"reisify/internal/model"
+	"reisify/internal/model/converter"
+	"reisify/internal/repository"
+	"reisify/internal/util"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"

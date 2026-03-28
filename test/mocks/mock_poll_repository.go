@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"slido-clone-backend/internal/entity"
+	"reisify/internal/entity"
 
 	"gorm.io/gorm"
 )

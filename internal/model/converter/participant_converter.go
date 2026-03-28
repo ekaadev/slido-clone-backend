@@ -1,8 +1,8 @@
 package converter
 
 import (
-	"slido-clone-backend/internal/entity"
-	"slido-clone-backend/internal/model"
+	"reisify/internal/entity"
+	"reisify/internal/model"
 )
 
 // ParticipantToResponse convert entity Participant to model ParticipantResponse

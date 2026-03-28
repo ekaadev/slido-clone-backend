@@ -2,8 +2,8 @@ package usecase
 
 import (
 	"context"
-	"slido-clone-backend/internal/model"
-	"slido-clone-backend/internal/repository"
+	"reisify/internal/model"
+	"reisify/internal/repository"
 	"sort"
 	"time"
 

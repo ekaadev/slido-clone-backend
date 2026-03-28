@@ -1,14 +1,14 @@
 package config
 
 import (
-	"slido-clone-backend/internal/delivery/http"
-	"slido-clone-backend/internal/delivery/http/middleware"
-	"slido-clone-backend/internal/delivery/http/route"
-	"slido-clone-backend/internal/delivery/websocket"
-	"slido-clone-backend/internal/repository"
-	"slido-clone-backend/internal/sfu"
-	"slido-clone-backend/internal/usecase"
-	"slido-clone-backend/internal/util"
+	"reisify/internal/delivery/http"
+	"reisify/internal/delivery/http/middleware"
+	"reisify/internal/delivery/http/route"
+	"reisify/internal/delivery/websocket"
+	"reisify/internal/repository"
+	"reisify/internal/sfu"
+	"reisify/internal/usecase"
+	"reisify/internal/util"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"

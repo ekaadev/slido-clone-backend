@@ -21,7 +21,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"slido-clone-backend/internal/config"
+	"reisify/internal/config"
 )
 
 var (

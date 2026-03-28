@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"slido-clone-backend/internal/util"
+	"reisify/internal/util"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"

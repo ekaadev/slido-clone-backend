@@ -3,7 +3,7 @@ package util
 import (
 	"context"
 	"fmt"
-	"slido-clone-backend/internal/model"
+	"reisify/internal/model"
 	"time"
 
 	"github.com/gofiber/fiber/v2"

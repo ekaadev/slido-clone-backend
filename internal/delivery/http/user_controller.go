@@ -1,8 +1,8 @@
 package http
 
 import (
-	"slido-clone-backend/internal/model"
-	"slido-clone-backend/internal/usecase"
+	"reisify/internal/model"
+	"reisify/internal/usecase"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"

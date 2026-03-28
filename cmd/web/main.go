@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"slido-clone-backend/internal/config"
+	"reisify/internal/config"
 )
 
 func main() {

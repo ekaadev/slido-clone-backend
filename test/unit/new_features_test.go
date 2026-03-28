@@ -1,7 +1,7 @@
 package unit
 
 import (
-	"slido-clone-backend/internal/model"
+	"reisify/internal/model"
 	"testing"
 	"time"
 

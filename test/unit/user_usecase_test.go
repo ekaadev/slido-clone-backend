@@ -2,12 +2,12 @@ package unit
 
 import (
 	"context"
-	"slido-clone-backend/internal/entity"
-	"slido-clone-backend/internal/model"
-	"slido-clone-backend/internal/repository"
-	"slido-clone-backend/internal/usecase"
-	"slido-clone-backend/internal/util"
-	"slido-clone-backend/test/mocks"
+	"reisify/internal/entity"
+	"reisify/internal/model"
+	"reisify/internal/repository"
+	"reisify/internal/usecase"
+	"reisify/internal/util"
+	"reisify/test/mocks"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
