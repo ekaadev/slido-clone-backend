@@ -3,7 +3,6 @@ package http
 import (
 	"reisify/internal/model"
 	"reisify/internal/usecase"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -41,6 +40,9 @@ func (c *UserController) Register(ctx *fiber.Ctx) error {
 		return err
 	}
 
+	// set token as HTTP-only cookie
+	setAuthCookie(ctx, response.Token)
+
 	return ctx.Status(fiber.StatusCreated).JSON(model.WebResponse{
 		Data: response,
 	})
@@ -64,6 +66,9 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		c.Log.Warnf("Login failed: %s", err)
 		return err
 	}
+
+	// set token as HTTP-only cookie
+	setAuthCookie(ctx, response.Token)
 
 	// return response
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
@@ -89,6 +94,9 @@ func (c *UserController) Anon(ctx *fiber.Ctx) error {
 		return err
 	}
 
+	// set token as HTTP-only cookie
+	setAuthCookie(ctx, response.Token)
+
 	// return response
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
 		Data: response,
@@ -97,24 +105,20 @@ func (c *UserController) Anon(ctx *fiber.Ctx) error {
 
 // Logout handler untuk logout user dan invalidate token
 func (c *UserController) Logout(ctx *fiber.Ctx) error {
-	// extract token from Authorization header
-	authHeader := ctx.Get("Authorization")
-	if authHeader == "" {
+	// extract token from HTTP-only cookie
+	tokenString := ctx.Cookies("token")
+	if tokenString == "" {
 		return fiber.ErrUnauthorized
 	}
 
-	// remove "Bearer " prefix
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-	if tokenString == authHeader {
-		// no Bearer prefix found
-		return fiber.ErrUnauthorized
-	}
-
-	// call usecase to logout
+	// call usecase to invalidate token in Redis
 	if err := c.UserUseCase.Logout(ctx.UserContext(), tokenString); err != nil {
 		c.Log.Warnf("Logout failed: %s", err)
 		return err
 	}
+
+	// clear the auth cookie
+	clearAuthCookie(ctx)
 
 	return ctx.Status(fiber.StatusOK).JSON(model.WebResponse{
 		Data: map[string]string{

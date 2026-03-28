@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"log"
 	"reisify/internal/model"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const minJWTSecretLength = 32
+
 // TokenUtil provides methods for creating and parsing JWT tokens.
 type TokenUtil struct {
 	SecretKey string
@@ -18,7 +21,11 @@ type TokenUtil struct {
 }
 
 // NewTokenUtil creates a new instance of TokenUtil with the provided secret key.
+// It terminates the process if the secret key is shorter than the minimum required length.
 func NewTokenUtil(secretKey string, redisClient *redis.Client) *TokenUtil {
+	if len(secretKey) < minJWTSecretLength {
+		log.Fatalf("JWT_SECRET must be at least %d characters long for HS256 security (current: %d)", minJWTSecretLength, len(secretKey))
+	}
 	return &TokenUtil{
 		SecretKey: secretKey,
 		Redis:     redisClient,

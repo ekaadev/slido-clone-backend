@@ -47,6 +47,9 @@ func (c *ParticipantController) Join(ctx *fiber.Ctx) error {
 		return err
 	}
 
+	// set room-scoped token as HTTP-only cookie
+	setAuthCookie(ctx, response.Token)
+
 	// return response
 	return ctx.Status(fiber.StatusCreated).JSON(model.WebResponse{
 		Data: response,

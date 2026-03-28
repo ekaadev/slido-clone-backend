@@ -26,11 +26,15 @@ func NewWebSocketHandler(hub *Hub, log *logrus.Logger, tokenUtil *util.TokenUtil
 
 // HandleWebSocket menangani koneksi WebSocket baru http -> ws
 func (wsh *WebSocketHandler) HandleWebSocket(ctx *fiber.Ctx) error {
-	// extract jwt token from query parameter
-	token := ctx.Query("token")
+	// prefer token from HTTP-only cookie (same-origin browser clients);
+	// fall back to query parameter for non-browser clients (mobile, CLI)
+	token := ctx.Cookies("token")
 	if token == "" {
-		wsh.log.Warn("missing token parameter")
-		return fiber.ErrBadRequest
+		token = ctx.Query("token")
+	}
+	if token == "" {
+		wsh.log.Warn("missing auth token")
+		return fiber.ErrUnauthorized
 	}
 
 	// parse token and validate

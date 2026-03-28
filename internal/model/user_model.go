@@ -12,7 +12,7 @@ type UserResponse struct {
 
 type AuthResponse struct {
 	User  UserResponse `json:"user"`
-	Token string       `json:"token"`
+	Token string       `json:"-"` // token is set as HTTP-only cookie, not returned in body
 }
 
 type RegisterUserRequest struct {

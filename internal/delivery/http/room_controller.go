@@ -68,12 +68,14 @@ func (c *RoomController) Create(ctx *fiber.Ctx) error {
 		return fiber.ErrInternalServerError
 	}
 
+	// set room-scoped token as HTTP-only cookie
+	setAuthCookie(ctx, newToken)
+
 	// return response
 	return ctx.Status(fiber.StatusCreated).JSON(model.WebResponse{
 		Data: map[string]interface{}{
 			"room":           response.Room,
 			"participant_id": response.ParticipantID,
-			"token":          newToken,
 		},
 	})
 }
@@ -212,18 +214,14 @@ func (c *RoomController) SendAnnouncement(ctx *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
+	// only the room presenter may send announcements
+	if !auth.IsRoomOwner {
+		c.Log.Warnf("SendAnnouncement - User is not room owner")
+		return fiber.ErrForbidden
+	}
+
 	request.PresenterID = *auth.UserID
 	request.RoomID = uint(roomIDUint64)
-
-	// validate presenter owns the room (simple check via room usecase)
-	roomRequest := &model.UpdateToCloseRoomRequestByID{
-		PresenterID: request.PresenterID,
-		RoomID:      request.RoomID,
-		Status:      "active", // dummy, just for validation
-	}
-	// Reuse the logic to check room ownership - but we just need to verify ownership
-	// For now, broadcast directly since authenticated user should be presenter
-	_ = roomRequest
 
 	// broadcast announcement ke room via websocket
 	announcementData := map[string]interface{}{

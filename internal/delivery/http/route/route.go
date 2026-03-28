@@ -3,8 +3,10 @@ package route
 import (
 	"reisify/internal/delivery/http"
 	"reisify/internal/delivery/websocket"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 )
 
 type RouteConfig struct {
@@ -40,9 +42,15 @@ func (c *RouteConfig) SetupGuestRoute() {
 		return ctx.SendStatus(fiber.StatusOK)
 	})
 
-	c.App.Post("/api/v1/users/register", c.UserController.Register)
-	c.App.Post("/api/v1/users/login", c.UserController.Login)
-	c.App.Post("/api/v1/users/anonymous", c.UserController.Anon)
+	// rate limiter for auth endpoints: max 10 requests per minute per IP
+	authLimiter := limiter.New(limiter.Config{
+		Max:        10,
+		Expiration: 1 * time.Minute,
+	})
+
+	c.App.Post("/api/v1/users/register", authLimiter, c.UserController.Register)
+	c.App.Post("/api/v1/users/login", authLimiter, c.UserController.Login)
+	c.App.Post("/api/v1/users/anonymous", authLimiter, c.UserController.Anon)
 
 	c.App.Get("/api/v1/rooms/:room_code", c.RoomController.Get)
 }

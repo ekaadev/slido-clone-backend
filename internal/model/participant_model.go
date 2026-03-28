@@ -40,7 +40,7 @@ type ParticipantListResponse struct {
 
 type JoinRoomResponse struct {
 	Participant ParticipantResponse `json:"participant"`
-	Token       string              `json:"token"`
+	Token       string              `json:"-"` // token is set as HTTP-only cookie, not returned in body
 }
 
 type ParticipantInfo struct {

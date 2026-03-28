@@ -4,29 +4,21 @@ import (
 	"reisify/internal/model"
 	"reisify/internal/usecase"
 	"reisify/internal/util"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func NewAuth(userUseCase *usecase.UserUseCase, tokenUtil *util.TokenUtil) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		// sign token, and get token from header "Authorization"
-		request := &model.VerifyUserRequest{
-			Token: ctx.Get("Authorization", "NOT_FOUND"),
-		}
-
-		userUseCase.Log.Debugf("Authorization : %s", request.Token)
-
-		// split "Bearer <token>"
-		parts := strings.Split(request.Token, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			userUseCase.Log.Warnf("Invalid token format")
+		// extract token from HTTP-only cookie
+		tokenString := ctx.Cookies("token")
+		if tokenString == "" {
+			userUseCase.Log.Warnf("Missing auth token cookie")
 			return fiber.ErrUnauthorized
 		}
 
-		// parse token
-		auth, err := tokenUtil.ParseToken(ctx.UserContext(), parts[1])
+		// parse and validate token
+		auth, err := tokenUtil.ParseToken(ctx.UserContext(), tokenString)
 		if err != nil {
 			userUseCase.Log.Warnf("Failed to parse token: %v", err)
 			return fiber.ErrUnauthorized

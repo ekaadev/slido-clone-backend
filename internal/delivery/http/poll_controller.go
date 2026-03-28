@@ -108,12 +108,20 @@ func (c *PollController) GetActive(ctx *fiber.Ctx) error {
 
 // GetHistory handler untuk mendapatkan poll history di room
 func (c *PollController) GetHistory(ctx *fiber.Ctx) error {
+	auth := middleware.GetUser(ctx)
+
 	// parse room_id from params
 	roomIDStr := ctx.Params("room_id")
 	roomIDUint64, err := strconv.ParseUint(roomIDStr, 10, 64)
 	if err != nil {
 		c.Log.Warnf("GetHistory - Invalid room_id: %v", err)
 		return fiber.ErrBadRequest
+	}
+
+	// caller must belong to the requested room
+	if auth.RoomID == nil || *auth.RoomID != uint(roomIDUint64) {
+		c.Log.Warnf("GetHistory - Caller does not belong to room %d", roomIDUint64)
+		return fiber.ErrForbidden
 	}
 
 	// parse query params
@@ -302,7 +310,7 @@ func (c *PollController) broadcastLeaderboardUpdate(roomID uint, participantID u
 func pollMustMarshalJSON(v interface{}) []byte {
 	data, err := json.Marshal(v)
 	if err != nil {
-		panic(err)
+		return []byte("{}")
 	}
 	return data
 }

@@ -40,7 +40,7 @@ func NewParticipantUseCase(db *gorm.DB, log *logrus.Logger, validate *validator.
 func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRequest) (*model.JoinRoomResponse, error) {
 	// transaction begin
 	tx := c.DB.WithContext(ctx).Begin()
-	defer tx.Commit()
+	defer tx.Rollback()
 
 	// validate request
 	if err := c.Validate.Struct(request); err != nil {
@@ -179,7 +179,7 @@ func (c *ParticipantUseCase) Join(ctx context.Context, request *model.JoinRoomRe
 func (c *ParticipantUseCase) List(ctx context.Context, request *model.ListParticipantsRequest) (*model.ParticipantListResponse, int64, error) {
 	// begin transaction
 	tx := c.DB.WithContext(ctx).Begin()
-	defer tx.Commit()
+	defer tx.Rollback()
 
 	// validate request
 	if err := c.Validate.Struct(request); err != nil {
@@ -225,7 +225,7 @@ func (c *ParticipantUseCase) List(ctx context.Context, request *model.ListPartic
 func (c *ParticipantUseCase) Leaderboard(ctx context.Context, request *model.GetLeaderboardRequest) (*model.LeaderboardResponse, error) {
 	// begin transaction
 	tx := c.DB.WithContext(ctx).Begin()
-	defer tx.Commit()
+	defer tx.Rollback()
 
 	// validate request
 	if err := c.Validate.Struct(request); err != nil {

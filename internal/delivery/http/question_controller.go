@@ -274,7 +274,7 @@ func (c *QuestionController) broadcastQuestionValidated(roomID uint, response *m
 func mustMarshalJSON(v interface{}) []byte {
 	data, err := json.Marshal(v)
 	if err != nil {
-		panic(err)
+		return []byte("{}")
 	}
 	return data
 }
