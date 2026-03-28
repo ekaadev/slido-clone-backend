@@ -61,6 +61,10 @@ func (c *ParticipantController) List(ctx *fiber.Ctx) error {
 	// get auth from locals
 	auth := middleware.GetUser(ctx)
 
+	if auth.ParticipantID == nil || auth.RoomID == nil {
+		return fiber.NewError(fiber.StatusBadRequest, "You must join a room first")
+	}
+
 	// create a model request
 	request := &model.ListParticipantsRequest{
 		ParticipantID: *auth.ParticipantID,
@@ -76,7 +80,7 @@ func (c *ParticipantController) List(ctx *fiber.Ctx) error {
 	}
 
 	// caller must belong to the requested room
-	if auth.RoomID == nil || *auth.RoomID != uint(idUint64) {
+	if *auth.RoomID != uint(idUint64) {
 		c.Log.Warnf("List - Caller does not belong to room %d", idUint64)
 		return fiber.ErrForbidden
 	}
@@ -110,6 +114,10 @@ func (c *ParticipantController) Leaderboard(ctx *fiber.Ctx) error {
 	// get auth from locals
 	auth := middleware.GetUser(ctx)
 
+	if auth.ParticipantID == nil || auth.RoomID == nil {
+		return fiber.NewError(fiber.StatusBadRequest, "You must join a room first")
+	}
+
 	// create model request
 	request := &model.GetLeaderboardRequest{
 		ParticipantID: *auth.ParticipantID,
@@ -123,7 +131,7 @@ func (c *ParticipantController) Leaderboard(ctx *fiber.Ctx) error {
 	}
 
 	// caller must belong to the requested room
-	if auth.RoomID == nil || *auth.RoomID != uint(idUint64) {
+	if *auth.RoomID != uint(idUint64) {
 		c.Log.Warnf("Leaderboard - Caller does not belong to room %d", idUint64)
 		return fiber.ErrForbidden
 	}

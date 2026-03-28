@@ -125,6 +125,10 @@ func (c *QuestionController) Upvote(ctx *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
+	if auth.ParticipantID == nil || auth.RoomID == nil {
+		return fiber.NewError(fiber.StatusBadRequest, "You must join a room first")
+	}
+
 	// create request
 	request := &model.UpvoteRequest{
 		QuestionID:    uint(questionIDUint64),
@@ -157,6 +161,10 @@ func (c *QuestionController) RemoveUpvote(ctx *fiber.Ctx) error {
 	if err != nil {
 		c.Log.Warnf("RemoveUpvote - Invalid question_id: %v", err)
 		return fiber.ErrBadRequest
+	}
+
+	if auth.ParticipantID == nil || auth.RoomID == nil {
+		return fiber.NewError(fiber.StatusBadRequest, "You must join a room first")
 	}
 
 	// create request
