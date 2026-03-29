@@ -239,6 +239,40 @@ paths:
         '404':
           description: Room not found
 
+  /rooms/{room_id}/announcement:
+    post:
+      tags:
+        - Room
+      summary: Send announcement to all participants (presenter only)
+      operationId: sendAnnouncement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendAnnouncementRequest'
+      responses:
+        '200':
+          description: Announcement sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementResponseWrapper'
+        '400':
+          description: Invalid request body
+        '403':
+          description: Not authorized (presenter only)
+        '404':
+          description: Room not found
+
   /rooms/{room_id}/xp-transactions:
     get:
       tags:
@@ -647,6 +681,16 @@ components:
           type: string
           enum: [closed]
 
+    SendAnnouncementRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+
     JoinRoomRequest:
       type: object
       required:
@@ -834,6 +878,21 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/UpdateToCloseRoom'
+
+    AnnouncementResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        announced_at:
+          type: string
+          format: date-time
+
+    AnnouncementResponseWrapper:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/AnnouncementResponse'
 
     RoomListItem:
       type: object
