@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: golangci-lint
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          golangci-lint run ./...
+
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  unit-test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run unit tests
+        run: go test ./test/unit/... -v -race -coverprofile=coverage.out
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.out
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: reisify_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U testuser -d reisify_test"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6381:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Create .env.test
+        run: |
+          cat <<'EOF' > .env.test
+          DATABASE_USERNAME=testuser
+          DATABASE_PASSWORD=testpass
+          DATABASE_HOST=localhost
+          DATABASE_PORT=5434
+          DATABASE_NAME=reisify_test
+          JWT_SECRET=ci-test-secret-key-for-integration-32c
+          REDIS_HOST=localhost
+          REDIS_PORT=6381
+          REDIS_DB=1
+          COOKIE_SECURE=false
+          ALLOWED_ORIGINS=http://localhost:3000
+          EOF
+
+      - name: Run integration tests
+        run: go test ./test/integration/... -v -race

@@ -3,7 +3,7 @@
 # Uses the full Go toolchain to compile the binary and download the migrate CLI.
 # This stage is discarded after build — none of its size ends up in the final image.
 # =============================================================================
-FROM golang:1.25-alpine AS builder
+FROM golang:1.25.8-alpine AS builder
 
 WORKDIR /app
 

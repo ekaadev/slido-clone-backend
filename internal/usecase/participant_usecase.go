@@ -262,6 +262,10 @@ func (c *ParticipantUseCase) Leaderboard(ctx context.Context, request *model.Get
 
 	// get my rank (from participant ID)
 	rank, xpScore, err := c.ParticipantRepository.GetRankAndScoreByParticipantID(tx, request.RoomID, request.ParticipantID)
+	if err != nil {
+		c.Log.Warnf("failed to get rank and score for participant %d: %+v", request.ParticipantID, err)
+		return nil, fiber.ErrInternalServerError
+	}
 
 	myRank := &model.MyRank{
 		Rank:    int(rank),
