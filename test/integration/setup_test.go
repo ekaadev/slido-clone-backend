@@ -203,7 +203,7 @@ func extractCookieToken(resp *http.Response) string {
 // The response body can only be read once — do not call resp.Body after this.
 func readBody(t *testing.T, resp *http.Response) map[string]interface{} {
 	t.Helper()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var result map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		t.Fatalf("failed to decode response body: %v", err)
@@ -228,25 +228,6 @@ func registerUser(t *testing.T, username, email, password, role string) string {
 	token := extractCookieToken(resp)
 	if token == "" {
 		t.Fatal("register succeeded but no token cookie in response")
-	}
-	return token
-}
-
-// loginUser logs in and returns the JWT token.
-func loginUser(t *testing.T, username, password string) string {
-	t.Helper()
-	body := map[string]string{
-		"username": username,
-		"password": password,
-	}
-	resp := makeRequest(t, http.MethodPost, "/api/v1/users/login", body, "")
-	if resp.StatusCode != http.StatusOK {
-		result := readBody(t, resp)
-		t.Fatalf("login failed: status=%d body=%v", resp.StatusCode, result)
-	}
-	token := extractCookieToken(resp)
-	if token == "" {
-		t.Fatal("login succeeded but no token cookie in response")
 	}
 	return token
 }

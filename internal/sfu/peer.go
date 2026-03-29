@@ -156,7 +156,7 @@ func (p *Peer) Negotiate() error {
 
 func (p *Peer) Close() {
 	if p.pc != nil {
-		p.pc.Close()
+		_ = p.pc.Close()
 	}
 }
 

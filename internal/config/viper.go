@@ -16,7 +16,7 @@ func NewViper() *viper.Viper {
 	// read configuration from config.json (general configuration)
 	config.SetConfigFile("config.json")
 	if err := config.ReadInConfig(); err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		panic(fmt.Errorf("fatal error config file: %s", err))
 	}
 
 	// read configuration from .env (sensitive/secret configuration)
@@ -31,7 +31,7 @@ func NewViper() *viper.Viper {
 		// If .env is absent, fall back to OS environment variables via AutomaticEnv().
 		var notFound viper.ConfigFileNotFoundError
 		if !os.IsNotExist(err) && !errors.As(err, &notFound) {
-			panic(fmt.Errorf("Fatal error env file: %s \n", err))
+			panic(fmt.Errorf("fatal error env file: %s", err))
 		}
 	}
 

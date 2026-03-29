@@ -15,9 +15,6 @@ const (
 
 	// periode untuk mengirim ping ke client dalam detik, pingPeriod < pongWait
 	pingPeriod = (pongWait * 9) / 10
-
-	// ukuran maksimal pesan dalam byte
-	maxMessage = 512 * 1024
 )
 
 // Client representasi koneksi websocket ke client
@@ -45,13 +42,13 @@ func (c *Client) ReadPump() {
 			c.hub.log.Warnf("websocket read pump panic: %v", r)
 		}
 		c.hub.unregister <- c
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 
 	// set configurasi koneksi
-	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	_ = c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		_ = c.conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
 
@@ -84,16 +81,16 @@ func (c *Client) WritePump() {
 			c.hub.log.Warnf("websocket write pump panic: %v", r)
 		}
 		ticker.Stop()
-		c.conn.Close()
+		_ = c.conn.Close()
 	}()
 
 	for {
 		select {
 		case msg, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 
 			if !ok {
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -101,20 +98,20 @@ func (c *Client) WritePump() {
 			if err != nil {
 				return
 			}
-			w.Write(msg)
+			_, _ = w.Write(msg)
 
 			// kirim semua pending message ke queue
 			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write([]byte{'\n'})
-				w.Write(<-c.send)
+			for range n {
+				_, _ = w.Write([]byte{'\n'})
+				_, _ = w.Write(<-c.send)
 			}
 
 			if err = w.Close(); err != nil {
 				return
 			}
 		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}

@@ -142,36 +142,6 @@ func TestUserUseCase_Anon_DisplayNameRequired(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// setupUserUseCaseMockTest setup test with mock repositories
-func setupUserUseCaseMockTest(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, *mocks.MockUserRepository, *mocks.MockParticipantRepository, *mocks.MockRoomRepository, *mocks.MockTokenUtil, *validator.Validate, *logrus.Logger) {
-	// create sqlmock
-	db, mockDB, err := sqlmock.New()
-	assert.NoError(t, err)
-
-	// create gorm db
-	dialector := postgres.New(postgres.Config{
-		Conn:                 db,
-		PreferSimpleProtocol: true,
-	})
-	gormDB, err := gorm.Open(dialector, &gorm.Config{})
-	assert.NoError(t, err)
-
-	// create mocks
-	mockUserRepo := new(mocks.MockUserRepository)
-	mockParticipantRepo := new(mocks.MockParticipantRepository)
-	mockRoomRepo := new(mocks.MockRoomRepository)
-	mockTokenUtil := new(mocks.MockTokenUtil)
-
-	// create real validator
-	validate := validator.New()
-
-	// create logger
-	log := logrus.New()
-	log.SetLevel(logrus.PanicLevel)
-
-	return gormDB, mockDB, mockUserRepo, mockParticipantRepo, mockRoomRepo, mockTokenUtil, validate, log
-}
-
 // TestRoomCode_Validation test room code validation
 func TestRoomCode_Validation(t *testing.T) {
 	validate := validator.New()
